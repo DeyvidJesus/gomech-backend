@@ -1,6 +1,6 @@
 package com.gomech.controller;
 
-import com.gomech.entity.Vehicle;
+import com.gomech.model.Vehicle;
 import com.gomech.service.VehicleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

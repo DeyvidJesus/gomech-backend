@@ -1,4 +1,4 @@
-package com.gomech.entity;
+package com.gomech.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;

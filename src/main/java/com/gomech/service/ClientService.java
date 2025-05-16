@@ -1,6 +1,6 @@
 package com.gomech.service;
 
-import com.gomech.entity.Client;
+import com.gomech.model.Client;
 import com.gomech.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
 package com.gomech.controller;
 
-import com.gomech.entity.Client;
+import com.gomech.model.Client;
 import com.gomech.service.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

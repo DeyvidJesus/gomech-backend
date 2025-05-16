@@ -1,7 +1,8 @@
 package com.gomech.service;
 
-import com.gomech.entity.Vehicle;
+import com.gomech.model.Vehicle;
 import com.gomech.repository.VehicleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Optional;
 
 @Service
 public class VehicleService {
+    @Autowired
     private VehicleRepository repository;
 
     public Vehicle save(Vehicle vehicle) {
