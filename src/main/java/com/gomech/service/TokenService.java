@@ -13,23 +13,25 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 
-
 @Service
 public class TokenService {
 
-    @Value("${api.security.token.secret}")
+    private static final String ISSUER = "API Gomech";
+
+    @Value("${api.security.token.secret:gomech-secret-key}")
     private String secret;
 
     public String generateToken(User user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.create()
-                    .withIssuer("API Enterprise Challenge - Games")
+                    .withIssuer(ISSUER)
                     .withSubject(user.getEmail())
+                    .withIssuedAt(new Date())
                     .withExpiresAt(expirationDate())
                     .sign(algorithm);
         } catch (JWTCreationException exception){
-            throw new RuntimeException("Erro ao gerar token jwt.", exception);
+            throw new RuntimeException("Erro ao gerar token JWT", exception);
         }
     }
 
@@ -37,12 +39,12 @@ public class TokenService {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
-                    .withIssuer("API Enterprise Challenge - Games")
+                    .withIssuer(ISSUER)
                     .build()
                     .verify(tokenJWT)
                     .getSubject();
         } catch (JWTVerificationException exception) {
-            throw new RuntimeException("Token JWT inválido ou expirado!");
+            throw new RuntimeException("Token JWT inválido ou expirado", exception);
         }
     }
 
@@ -50,18 +52,38 @@ public class TokenService {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
-                    .withIssuer("API Enterprise Challenge - Games")
+                    .withIssuer(ISSUER)
                     .build()
                     .verify(tokenJWT)
                     .getExpiresAt();
         } catch (JWTVerificationException exception) {
-            throw new RuntimeException("Token JWT inválido ou expirado!");
+            throw new RuntimeException("Token JWT inválido ou expirado", exception);
         }
     }
 
-    private Instant expirationDate() {
-        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+    public boolean validateToken(String tokenJWT) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            JWT.require(algorithm)
+                    .withIssuer(ISSUER)
+                    .build()
+                    .verify(tokenJWT);
+            return true;
+        } catch (JWTVerificationException exception) {
+            return false;
+        }
     }
 
+    public boolean isTokenExpired(String tokenJWT) {
+        try {
+            Date expirationDate = getExpirationDate(tokenJWT);
+            return expirationDate.before(new Date());
+        } catch (Exception e) {
+            return true; // Se não conseguir verificar, considera como expirado
+        }
+    }
 
+    private Date expirationDate() {
+        return Date.from(LocalDateTime.now().plusHours(8).toInstant(ZoneOffset.of("-03:00")));
+    }
 }
