@@ -123,6 +123,8 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 - `POST /api/clients/upload` - Cadastrar clientes via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
 - `GET /api/clients` - Listar todos os clientes
 - `GET /api/clients/{id}` - Buscar cliente por ID
+- `GET /api/clients/export?format=csv` - Baixar clientes em CSV
+- `GET /api/clients/export?format=xlsx` - Baixar clientes em Excel
 - `PUT /api/clients/{id}` - Atualizar cliente (requer autenticação)
 - `DELETE /api/clients/{id}` - Excluir cliente
 
@@ -131,8 +133,68 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 - `POST /api/vehicles/upload` - Cadastrar veículos via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
 - `GET /api/vehicles` - Listar todos os veículos
 - `GET /api/vehicles/{id}` - Buscar veículo por ID
+- `GET /api/vehicles/export?format=csv` - Baixar veículos em CSV
+- `GET /api/vehicles/export?format=xlsx` - Baixar veículos em Excel
 - `PUT /api/vehicles/{id}` - Atualizar veículo (requer autenticação)
 - `DELETE /api/vehicles/{id}` - Excluir veículo
+
+#### Exemplos de chamadas via `curl`
+
+```bash
+# --- Clientes ---
+# Criar cliente
+curl -X POST http://localhost:3000/api/clients \
+     -H "Content-Type: application/json" \
+     -d '{"name":"Fulano","document":"123"}'
+
+# Enviar planilha de clientes
+curl -X POST -F "file=@clientes.csv" http://localhost:3000/api/clients/upload
+
+# Listar clientes
+curl http://localhost:3000/api/clients
+
+# Buscar cliente por id
+curl http://localhost:3000/api/clients/1
+
+# Exportar clientes em CSV
+curl -OJ "http://localhost:3000/api/clients/export?format=csv"
+
+# Atualizar cliente
+curl -X PUT http://localhost:3000/api/clients/1 \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{"name":"Novo"}'
+
+# Excluir cliente
+curl -X DELETE http://localhost:3000/api/clients/1
+
+# --- Veículos ---
+# Criar veículo
+curl -X POST http://localhost:3000/api/vehicles \
+     -H "Content-Type: application/json" \
+     -d '{"licensePlate":"ABC-1234"}'
+
+# Enviar planilha de veículos
+curl -X POST -F "file=@veiculos.csv" http://localhost:3000/api/vehicles/upload
+
+# Listar veículos
+curl http://localhost:3000/api/vehicles
+
+# Buscar veículo por id
+curl http://localhost:3000/api/vehicles/1
+
+# Exportar veículos em Excel
+curl -OJ "http://localhost:3000/api/vehicles/export?format=xlsx"
+
+# Atualizar veículo
+curl -X PUT http://localhost:3000/api/vehicles/1 \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{"brand":"Marca"}'
+
+# Excluir veículo
+curl -X DELETE http://localhost:3000/api/vehicles/1
+```
 
 ## ⚙️ Configuração do Ambiente
 
@@ -228,6 +290,7 @@ java -jar target/Gomech-0.0.1-SNAPSHOT.jar
 - ✅ Cadastro, consulta, atualização e exclusão de clientes
 - ✅ Cadastro, consulta, atualização e exclusão de veículos
 - ✅ Importação de clientes e veículos via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
+- ✅ Exportação de clientes e veículos em `.csv` ou `.xlsx`
 - ✅ Relacionamento entre clientes e veículos (1:N)
 - ✅ Sistema de autenticação com JWT
 - ✅ Sistema de autorização baseado em roles

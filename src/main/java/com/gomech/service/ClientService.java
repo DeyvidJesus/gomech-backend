@@ -4,6 +4,7 @@ import com.gomech.model.Client;
 import com.gomech.repository.ClientRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -136,5 +140,57 @@ public class ClientService {
 
         client.setObservations(getter.apply("observations"));
         return client;
+    }
+
+    public ByteArrayInputStream exportToFile(String format) {
+        if (format != null && (format.equalsIgnoreCase("xlsx") || format.equalsIgnoreCase("xls"))) {
+            return exportToExcel();
+        }
+        return exportToDelimitedFile();
+    }
+
+    private ByteArrayInputStream exportToDelimitedFile() {
+        List<Client> clients = repository.findAll();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (CSVPrinter printer = new CSVPrinter(new PrintWriter(out),
+                CSVFormat.DEFAULT.withHeader("name", "document", "phone", "email", "address", "birthDate", "observations"))) {
+            for (Client c : clients) {
+                String birthDate = c.getBirthDate() != null ?
+                        LocalDate.ofInstant(c.getBirthDate().toInstant(), ZoneId.systemDefault()).toString() : "";
+                printer.printRecord(c.getName(), c.getDocument(), c.getPhone(), c.getEmail(), c.getAddress(), birthDate, c.getObservations());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao gerar CSV", e);
+        }
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    private ByteArrayInputStream exportToExcel() {
+        List<Client> clients = repository.findAll();
+        try (Workbook workbook = WorkbookFactory.create(true); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("clients");
+            Row header = sheet.createRow(0);
+            String[] headers = {"name", "document", "phone", "email", "address", "birthDate", "observations"};
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+            int rowIdx = 1;
+            for (Client c : clients) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(c.getName());
+                row.createCell(1).setCellValue(c.getDocument());
+                row.createCell(2).setCellValue(c.getPhone());
+                row.createCell(3).setCellValue(c.getEmail());
+                row.createCell(4).setCellValue(c.getAddress());
+                String birthDate = c.getBirthDate() != null ?
+                        LocalDate.ofInstant(c.getBirthDate().toInstant(), ZoneId.systemDefault()).toString() : "";
+                row.createCell(5).setCellValue(birthDate);
+                row.createCell(6).setCellValue(c.getObservations());
+            }
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao gerar planilha", e);
+        }
     }
 }

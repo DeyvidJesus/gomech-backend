@@ -4,6 +4,7 @@ import com.gomech.model.Vehicle;
 import com.gomech.repository.VehicleRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -142,5 +146,58 @@ public class VehicleService {
         }
 
         return vehicle;
+    }
+
+    public ByteArrayInputStream exportToFile(String format) {
+        if (format != null && (format.equalsIgnoreCase("xlsx") || format.equalsIgnoreCase("xls"))) {
+            return exportToExcel();
+        }
+        return exportToDelimitedFile();
+    }
+
+    private ByteArrayInputStream exportToDelimitedFile() {
+        List<Vehicle> vehicles = repository.findAll();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (CSVPrinter printer = new CSVPrinter(new PrintWriter(out),
+                CSVFormat.DEFAULT.withHeader("licensePlate", "brand", "model", "manufactureDate", "color", "observations", "kilometers", "vehicleId"))) {
+            for (Vehicle v : vehicles) {
+                String manufactureDate = v.getManufactureDate() != null ?
+                        LocalDate.ofInstant(v.getManufactureDate().toInstant(), ZoneId.systemDefault()).toString() : "";
+                printer.printRecord(v.getLicensePlate(), v.getBrand(), v.getModel(), manufactureDate, v.getColor(), v.getObservations(), v.getKilometers(), v.getVehicleId());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao gerar CSV", e);
+        }
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    private ByteArrayInputStream exportToExcel() {
+        List<Vehicle> vehicles = repository.findAll();
+        try (Workbook workbook = WorkbookFactory.create(true); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("vehicles");
+            String[] headers = {"licensePlate", "brand", "model", "manufactureDate", "color", "observations", "kilometers", "vehicleId"};
+            Row header = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+            int rowIdx = 1;
+            for (Vehicle v : vehicles) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(v.getLicensePlate());
+                row.createCell(1).setCellValue(v.getBrand());
+                row.createCell(2).setCellValue(v.getModel());
+                String manufactureDate = v.getManufactureDate() != null ?
+                        LocalDate.ofInstant(v.getManufactureDate().toInstant(), ZoneId.systemDefault()).toString() : "";
+                row.createCell(3).setCellValue(manufactureDate);
+                row.createCell(4).setCellValue(v.getColor());
+                row.createCell(5).setCellValue(v.getObservations());
+                row.createCell(6).setCellValue(v.getKilometers());
+                row.createCell(7).setCellValue(v.getVehicleId());
+            }
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao gerar planilha", e);
+        }
     }
 }
