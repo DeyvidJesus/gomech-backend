@@ -120,6 +120,7 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 
 ### Clientes (`/api/clients`)
 - `POST /api/clients` - Criar novo cliente
+- `POST /api/clients/upload` - Cadastrar clientes via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
 - `GET /api/clients` - Listar todos os clientes
 - `GET /api/clients/{id}` - Buscar cliente por ID
 - `PUT /api/clients/{id}` - Atualizar cliente (requer autenticação)
