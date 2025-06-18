@@ -128,6 +128,7 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 
 ### Veículos (`/api/vehicles`)
 - `POST /api/vehicles` - Criar novo veículo
+- `POST /api/vehicles/upload` - Cadastrar veículos via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
 - `GET /api/vehicles` - Listar todos os veículos
 - `GET /api/vehicles/{id}` - Buscar veículo por ID
 - `PUT /api/vehicles/{id}` - Atualizar veículo (requer autenticação)
@@ -226,6 +227,7 @@ java -jar target/Gomech-0.0.1-SNAPSHOT.jar
 
 - ✅ Cadastro, consulta, atualização e exclusão de clientes
 - ✅ Cadastro, consulta, atualização e exclusão de veículos
+- ✅ Importação de clientes e veículos via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
 - ✅ Relacionamento entre clientes e veículos (1:N)
 - ✅ Sistema de autenticação com JWT
 - ✅ Sistema de autorização baseado em roles
