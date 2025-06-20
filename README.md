@@ -8,6 +8,7 @@
 - [📊 Modelo de Dados](#-modelo-de-dados)
 - [🔐 Sistema de Segurança](#-sistema-de-segurança)
 - [🌐 API Endpoints](#-api-endpoints)
+- [📖 Exemplos de Requisições](REQUESTS.md)
 - [⚙️ Configuração do Ambiente](#️-configuração-do-ambiente)
 - [🚀 Como Executar](#-como-executar)
 - [📋 Dependências Principais](#-dependências-principais)
