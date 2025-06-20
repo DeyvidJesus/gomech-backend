@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +16,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
+@Table(name = "users")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -30,6 +30,7 @@ public class User implements UserDetails {
     private String password;
 
     @OneToOne
+    @JoinColumn(name = "role_id")
     private Role role;
 
     @Override

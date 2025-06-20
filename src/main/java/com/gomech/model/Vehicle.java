@@ -3,13 +3,13 @@ package com.gomech.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
 
 import java.util.Date;
 
 @Setter
 @Getter
 @Entity
+@Table(name = "vehicles")
 public class Vehicle {
     private String licensePlate;
 
@@ -28,9 +28,9 @@ public class Vehicle {
     private String vehicleId;
 
     @ManyToOne
+    @JoinColumn(name = "client_id")
     private Client client;
 
-    @jakarta.persistence.Id
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

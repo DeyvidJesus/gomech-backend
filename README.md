@@ -183,6 +183,8 @@ spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 ```
 
+Os scripts SQL para criação das tabelas estão no arquivo `src/main/resources/schema.sql`.
+
 ### Configurações da Aplicação
 
 ```properties
