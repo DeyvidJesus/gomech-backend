@@ -8,6 +8,7 @@
 - [📊 Modelo de Dados](#-modelo-de-dados)
 - [🔐 Sistema de Segurança](#-sistema-de-segurança)
 - [🌐 API Endpoints](#-api-endpoints)
+- [📖 Exemplos de Requisições](REQUESTS.md)
 - [⚙️ Configuração do Ambiente](#️-configuração-do-ambiente)
 - [🚀 Como Executar](#-como-executar)
 - [📋 Dependências Principais](#-dependências-principais)
@@ -113,6 +114,7 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 
 ### Configurações de Segurança
 - Endpoints PUT em `/api/**` requerem autenticação
+- `POST /api/auth/login` é público para geração do token
 - Demais endpoints são públicos
 - Sessões stateless (sem estado)
 
@@ -138,63 +140,8 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 - `PUT /api/vehicles/{id}` - Atualizar veículo (requer autenticação)
 - `DELETE /api/vehicles/{id}` - Excluir veículo
 
-#### Exemplos de chamadas via `curl`
-
-```bash
-# --- Clientes ---
-# Criar cliente
-curl -X POST http://localhost:3000/api/clients \
-     -H "Content-Type: application/json" \
-     -d '{"name":"Fulano","document":"123"}'
-
-# Enviar planilha de clientes
-curl -X POST -F "file=@clientes.csv" http://localhost:3000/api/clients/upload
-
-# Listar clientes
-curl http://localhost:3000/api/clients
-
-# Buscar cliente por id
-curl http://localhost:3000/api/clients/1
-
-# Exportar clientes em CSV
-curl -OJ "http://localhost:3000/api/clients/export?format=csv"
-
-# Atualizar cliente
-curl -X PUT http://localhost:3000/api/clients/1 \
-     -H "Authorization: Bearer <token>" \
-     -H "Content-Type: application/json" \
-     -d '{"name":"Novo"}'
-
-# Excluir cliente
-curl -X DELETE http://localhost:3000/api/clients/1
-
-# --- Veículos ---
-# Criar veículo
-curl -X POST http://localhost:3000/api/vehicles \
-     -H "Content-Type: application/json" \
-     -d '{"licensePlate":"ABC-1234"}'
-
-# Enviar planilha de veículos
-curl -X POST -F "file=@veiculos.csv" http://localhost:3000/api/vehicles/upload
-
-# Listar veículos
-curl http://localhost:3000/api/vehicles
-
-# Buscar veículo por id
-curl http://localhost:3000/api/vehicles/1
-
-# Exportar veículos em Excel
-curl -OJ "http://localhost:3000/api/vehicles/export?format=xlsx"
-
-# Atualizar veículo
-curl -X PUT http://localhost:3000/api/vehicles/1 \
-     -H "Authorization: Bearer <token>" \
-     -H "Content-Type: application/json" \
-     -d '{"brand":"Marca"}'
-
-# Excluir veículo
-curl -X DELETE http://localhost:3000/api/vehicles/1
-```
+### Autenticação (`/api/auth`)
+- `POST /api/auth/login` - Gerar token JWT
 
 ## ⚙️ Configuração do Ambiente
 
@@ -205,12 +152,16 @@ curl -X DELETE http://localhost:3000/api/vehicles/1
 
 ### Configuração do Banco de Dados
 
-O sistema está configurado para conectar com Oracle Database:
+Defina as variáveis de ambiente `DB_USERNAME` e `DB_PASSWORD` com as credenciais do Oracle.
 
 ```properties
 spring.datasource.url=jdbc:oracle:thin:@localhost:1521/FREEPDB1
 spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
 ```
+
+Os scripts SQL para criação das tabelas estão no arquivo `src/main/resources/schema.sql`.
 
 ### Configurações da Aplicação
 
@@ -246,44 +197,6 @@ java -jar target/Gomech-0.0.1-SNAPSHOT.jar
 1. Importe o projeto como projeto Maven
 2. Configure o JDK 21
 3. Execute a classe `GomechApplication.java`
-
-## 📋 Dependências Principais
-
-```xml
-<!-- Spring Boot Starters -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-web</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-jpa</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-
-<!-- Banco de Dados -->
-<dependency>
-    <groupId>com.oracle.database.jdbc</groupId>
-    <artifactId>ojdbc8</artifactId>
-    <version>21.5.0.0</version>
-</dependency>
-
-<!-- JWT -->
-<dependency>
-    <groupId>com.auth0</groupId>
-    <artifactId>java-jwt</artifactId>
-    <version>4.4.0</version>
-</dependency>
-
-<!-- Lombok -->
-<dependency>
-    <groupId>org.projectlombok</groupId>
-    <artifactId>lombok</artifactId>
-</dependency>
-```
 
 ## 🔄 Funcionalidades Implementadas
 
