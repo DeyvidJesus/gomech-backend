@@ -113,6 +113,7 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 
 ### Configurações de Segurança
 - Endpoints PUT em `/api/**` requerem autenticação
+- `POST /api/auth/login` é público para geração do token
 - Demais endpoints são públicos
 - Sessões stateless (sem estado)
 
@@ -134,6 +135,36 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 - `PUT /api/vehicles/{id}` - Atualizar veículo (requer autenticação)
 - `DELETE /api/vehicles/{id}` - Excluir veículo
 
+### Autenticação (`/api/auth`)
+- `POST /api/auth/login` - Gerar token JWT
+
+### Exemplos de Requisição
+
+```bash
+# Login e obtenção do token
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@email.com","password":"123"}'
+
+# Listar clientes
+curl http://localhost:3000/api/clients
+
+# Criar cliente (requer token)
+curl -X POST http://localhost:3000/api/clients \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{"name":"Joao","document":"123","phone":"999","email":"joao@test.com"}'
+
+# Listar veículos
+curl http://localhost:3000/api/vehicles
+
+# Criar veículo (requer token)
+curl -X POST http://localhost:3000/api/vehicles \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{"licensePlate":"ABC-1234","brand":"Fiat"}'
+```
+
 ## ⚙️ Configuração do Ambiente
 
 ### Pré-requisitos
@@ -143,11 +174,13 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 
 ### Configuração do Banco de Dados
 
-O sistema está configurado para conectar com Oracle Database:
+Defina as variáveis de ambiente `DB_USERNAME` e `DB_PASSWORD` com as credenciais do Oracle.
 
 ```properties
 spring.datasource.url=jdbc:oracle:thin:@localhost:1521/FREEPDB1
 spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
 ```
 
 ### Configurações da Aplicação
