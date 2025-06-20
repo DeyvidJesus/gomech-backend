@@ -138,33 +138,6 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 ### Autenticação (`/api/auth`)
 - `POST /api/auth/login` - Gerar token JWT
 
-### Exemplos de Requisição
-
-```bash
-# Login e obtenção do token
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@email.com","password":"123"}'
-
-# Listar clientes
-curl http://localhost:3000/api/clients
-
-# Criar cliente (requer token)
-curl -X POST http://localhost:3000/api/clients \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <TOKEN>" \
-  -d '{"name":"Joao","document":"123","phone":"999","email":"joao@test.com"}'
-
-# Listar veículos
-curl http://localhost:3000/api/vehicles
-
-# Criar veículo (requer token)
-curl -X POST http://localhost:3000/api/vehicles \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <TOKEN>" \
-  -d '{"licensePlate":"ABC-1234","brand":"Fiat"}'
-```
-
 ## ⚙️ Configuração do Ambiente
 
 ### Pré-requisitos
@@ -219,44 +192,6 @@ java -jar target/Gomech-0.0.1-SNAPSHOT.jar
 1. Importe o projeto como projeto Maven
 2. Configure o JDK 21
 3. Execute a classe `GomechApplication.java`
-
-## 📋 Dependências Principais
-
-```xml
-<!-- Spring Boot Starters -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-web</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-jpa</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-
-<!-- Banco de Dados -->
-<dependency>
-    <groupId>com.oracle.database.jdbc</groupId>
-    <artifactId>ojdbc8</artifactId>
-    <version>21.5.0.0</version>
-</dependency>
-
-<!-- JWT -->
-<dependency>
-    <groupId>com.auth0</groupId>
-    <artifactId>java-jwt</artifactId>
-    <version>4.4.0</version>
-</dependency>
-
-<!-- Lombok -->
-<dependency>
-    <groupId>org.projectlombok</groupId>
-    <artifactId>lombok</artifactId>
-</dependency>
-```
 
 ## 🔄 Funcionalidades Implementadas
 
