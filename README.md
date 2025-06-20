@@ -125,6 +125,8 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 - `POST /api/clients/upload` - Cadastrar clientes via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
 - `GET /api/clients` - Listar todos os clientes
 - `GET /api/clients/{id}` - Buscar cliente por ID
+- `GET /api/clients/export?format=csv` - Baixar clientes em CSV
+- `GET /api/clients/export?format=xlsx` - Baixar clientes em Excel
 - `PUT /api/clients/{id}` - Atualizar cliente (requer autenticação)
 - `DELETE /api/clients/{id}` - Excluir cliente
 
@@ -133,6 +135,8 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 - `POST /api/vehicles/upload` - Cadastrar veículos via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
 - `GET /api/vehicles` - Listar todos os veículos
 - `GET /api/vehicles/{id}` - Buscar veículo por ID
+- `GET /api/vehicles/export?format=csv` - Baixar veículos em CSV
+- `GET /api/vehicles/export?format=xlsx` - Baixar veículos em Excel
 - `PUT /api/vehicles/{id}` - Atualizar veículo (requer autenticação)
 - `DELETE /api/vehicles/{id}` - Excluir veículo
 
@@ -199,6 +203,7 @@ java -jar target/Gomech-0.0.1-SNAPSHOT.jar
 - ✅ Cadastro, consulta, atualização e exclusão de clientes
 - ✅ Cadastro, consulta, atualização e exclusão de veículos
 - ✅ Importação de clientes e veículos via planilhas `.csv`, `.xls`, `.xlsx` ou `.txt`
+- ✅ Exportação de clientes e veículos em `.csv` ou `.xlsx`
 - ✅ Relacionamento entre clientes e veículos (1:N)
 - ✅ Sistema de autenticação com JWT
 - ✅ Sistema de autorização baseado em roles
