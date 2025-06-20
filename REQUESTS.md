@@ -45,6 +45,32 @@ Content-Type: application/json
 }
 ```
 
+### Criar Usuário
+
+**Endpoint:** `POST /api/auth/register`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Corpo da Requisição:**
+```json
+{
+  "email": "admin@gomech.com",
+  "password": "123456",
+  "roleId": 1
+}
+```
+
+**Exemplo de Resposta (201 Created):**
+```json
+{
+  "id": 1,
+  "email": "admin@gomech.com"
+}
+```
+
 ## 👥 Clientes
 
 ### Criar Novo Cliente

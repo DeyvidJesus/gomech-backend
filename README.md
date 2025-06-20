@@ -142,6 +142,7 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 
 ### Autenticação (`/api/auth`)
 - `POST /api/auth/login` - Gerar token JWT
+- `POST /api/auth/register` - Criar novo usuário
 
 ## ⚙️ Configuração do Ambiente
 
