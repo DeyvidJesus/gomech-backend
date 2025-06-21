@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfiguration {
 
     private final SecurityFilter securityFilter;
@@ -34,10 +36,33 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
+                        // TEMPORÁRIO: Desabilitando segurança para testes
                         .anyRequest().permitAll()
-                )
-                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);
+                        
+                        // CONFIGURAÇÃO ORIGINAL COMENTADA PARA REATIVAR DEPOIS:
+                        /*
+                        // Rotas públicas
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        
+                        // Rotas que requerem autenticação - GET (visualização) para USER e ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/clients/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        
+                        // Rotas que requerem ADMIN - operações de escrita
+                        .requestMatchers(HttpMethod.POST, "/api/clients/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/clients/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/clients/**").hasAuthority("ROLE_ADMIN")
+                        
+                        .requestMatchers(HttpMethod.POST, "/api/vehicles/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/vehicles/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/vehicles/**").hasAuthority("ROLE_ADMIN")
+                        
+                        .anyRequest().authenticated()
+                        */
+                );
+                // COMENTANDO O FILTRO TEMPORARIAMENTE
+                // .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

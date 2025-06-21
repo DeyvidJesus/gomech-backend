@@ -28,30 +28,44 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private JWTUtils jwtUtils;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String tokenJWT = getToken(request);
+        
         if (tokenJWT != null) {
-            String subject = tokenService.getSubject(tokenJWT);
-            Date expirationDate = tokenService.getExpirationDate(tokenJWT);
-            Optional<User> user = userRepository.findByEmail(subject);
-            if(user.isPresent() && SecurityContextHolder.getContext().getAuthentication() == null) {
-                if (new JWTUtils().validateToken(subject, expirationDate, user.get())) {
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user, null, user.get().getAuthorities());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            try {
+                String subject = tokenService.getSubject(tokenJWT);
+                Date expirationDate = tokenService.getExpirationDate(tokenJWT);
+                
+                Optional<User> userOptional = userRepository.findByEmail(subject);
+                
+                if (userOptional.isPresent() && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    User user = userOptional.get();
+                    
+                    if (jwtUtils.validateToken(subject, expirationDate, user)) {
+                        UsernamePasswordAuthenticationToken authenticationToken = 
+                            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    }
                 }
+            } catch (Exception e) {
+                // Log do erro sem interromper o fluxo
+                logger.error("Erro ao processar token JWT: " + e.getMessage());
             }
         }
+        
         filterChain.doFilter(request, response);
     }
 
     private String getToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader != null) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.replace("Bearer ", "");
         }
         return null;
     }
-
 }

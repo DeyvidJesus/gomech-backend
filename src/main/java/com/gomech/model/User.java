@@ -26,18 +26,30 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(unique = true, nullable = false)
     private String email;
+    
+    @Column(nullable = false)
     private String password;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")
     private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (this.role == null || this.role.getAuthorities() == null) {
+            return new ArrayList<>();
+        }
+        
         List<SimpleGrantedAuthority> authoritiesList = new ArrayList<>();
         String[] authorities = this.role.getAuthorities().split(",");
-        Arrays.asList(authorities).forEach(a -> authoritiesList.add(new SimpleGrantedAuthority(a)));
+        Arrays.asList(authorities).forEach(a -> {
+            if (a != null && !a.trim().isEmpty()) {
+                authoritiesList.add(new SimpleGrantedAuthority(a.trim()));
+            }
+        });
         return authoritiesList;
     }
 
@@ -70,5 +82,4 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
 }
