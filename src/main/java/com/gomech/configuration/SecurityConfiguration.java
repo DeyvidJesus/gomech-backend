@@ -1,5 +1,6 @@
 package com.gomech.configuration;
 
+import com.gomech.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +17,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -23,9 +29,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration {
 
     private final SecurityFilter securityFilter;
-    private final com.gomech.repository.UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    public SecurityConfiguration(SecurityFilter securityFilter, com.gomech.repository.UserRepository userRepository) {
+    public SecurityConfiguration(SecurityFilter securityFilter, UserRepository userRepository) {
         this.securityFilter = securityFilter;
         this.userRepository = userRepository;
     }
@@ -33,38 +39,49 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors() // Ativa o CORS usando o bean abaixo
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // TEMPORÁRIO: Desabilitando segurança para testes
-                        .anyRequest().permitAll()
-                        
-                        // CONFIGURAÇÃO ORIGINAL COMENTADA PARA REATIVAR DEPOIS:
-                        /*
                         // Rotas públicas
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
-                        
+
                         // Rotas que requerem autenticação - GET (visualização) para USER e ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/clients/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/vehicles/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                        
+
                         // Rotas que requerem ADMIN - operações de escrita
                         .requestMatchers(HttpMethod.POST, "/api/clients/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/clients/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/clients/**").hasAuthority("ROLE_ADMIN")
-                        
+
                         .requestMatchers(HttpMethod.POST, "/api/vehicles/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/vehicles/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/vehicles/**").hasAuthority("ROLE_ADMIN")
-                        
+
                         .anyRequest().authenticated()
-                        */
-                );
-                // COMENTANDO O FILTRO TEMPORARIAMENTE
-                // .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);
+                )
+                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "https://go-mech.com"
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
