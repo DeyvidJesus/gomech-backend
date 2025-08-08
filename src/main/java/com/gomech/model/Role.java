@@ -1,22 +1,16 @@
 package com.gomech.model;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+public enum Role {
+    ADMIN("admin"),
+    USER("user");
 
-@Entity
-@Table(name = "roles")
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class Role {
+    private String role;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String nome;
-    private String authorities;
+    Role(String role){
+        this.role = role;
+    }
+
+    public String getRole(){
+        return role;
+    }
 }
