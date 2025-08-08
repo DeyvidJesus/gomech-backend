@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import com.gomech.dto.ChatRequestDTO;
 
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping("/ai/chat")
 public class ChatController {
     private final ChatClient chatClient;
 
