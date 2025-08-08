@@ -1,0 +1,1137 @@
+{
+  "clientes": [
+    {
+      "id": 1,
+      "nome": "Valentina Silveira",
+      "telefone": "81 3498 1328",
+      "email": "yasminalves@hotmail.com",
+      "cpf": "680.537.214-35"
+    },
+    {
+      "id": 2,
+      "nome": "Pietro das Neves",
+      "telefone": "31 2568 8174",
+      "email": "cporto@rezende.org",
+      "cpf": "512.309.684-15"
+    },
+    {
+      "id": 3,
+      "nome": "Sr. Kevin Santos",
+      "telefone": "(071) 5990-4847",
+      "email": "maysa86@da.com",
+      "cpf": "247.981.306-13"
+    },
+    {
+      "id": 4,
+      "nome": "Fernando Moraes",
+      "telefone": "(041) 3122 7336",
+      "email": "amoraes@ig.com.br",
+      "cpf": "752.843.601-17"
+    },
+    {
+      "id": 5,
+      "nome": "Raquel Pereira",
+      "telefone": "0500 286 9224",
+      "email": "alana90@bol.com.br",
+      "cpf": "792.106.845-67"
+    },
+    {
+      "id": 6,
+      "nome": "Maria Vitória Rocha",
+      "telefone": "(031) 6720 6856",
+      "email": "santosmaria-luiza@yahoo.com.br",
+      "cpf": "985.741.630-66"
+    },
+    {
+      "id": 7,
+      "nome": "Yasmin Azevedo",
+      "telefone": "+55 84 2146-7836",
+      "email": "danielamendes@oliveira.br",
+      "cpf": "176.952.834-28"
+    },
+    {
+      "id": 8,
+      "nome": "Cecília Nogueira",
+      "telefone": "(041) 6058-3036",
+      "email": "teixeirabianca@da.com",
+      "cpf": "356.879.214-19"
+    },
+    {
+      "id": 9,
+      "nome": "Noah Moura",
+      "telefone": "(071) 1057 6939",
+      "email": "rsilveira@das.net",
+      "cpf": "987.042.351-50"
+    },
+    {
+      "id": 10,
+      "nome": "Carolina Gonçalves",
+      "telefone": "+55 (011) 7981 5432",
+      "email": "clara04@hotmail.com",
+      "cpf": "741.268.509-02"
+    },
+    {
+      "id": 11,
+      "nome": "Emanuelly Cardoso",
+      "telefone": "(041) 9065-0217",
+      "email": "wfernandes@yahoo.com.br",
+      "cpf": "976.432.851-28"
+    },
+    {
+      "id": 12,
+      "nome": "João da Conceição",
+      "telefone": "(011) 3594 7619",
+      "email": "nathan91@uol.com.br",
+      "cpf": "183.052.976-59"
+    },
+    {
+      "id": 13,
+      "nome": "Nathan da Mota",
+      "telefone": "+55 (081) 3133 7747",
+      "email": "oliveiraana@freitas.com",
+      "cpf": "842.971.350-60"
+    },
+    {
+      "id": 14,
+      "nome": "Dra. Julia Almeida",
+      "telefone": "+55 11 4652 4455",
+      "email": "nicoleduarte@hotmail.com",
+      "cpf": "340.781.925-05"
+    },
+    {
+      "id": 15,
+      "nome": "Lívia Gonçalves",
+      "telefone": "+55 31 5737 2814",
+      "email": "flima@ramos.com",
+      "cpf": "418.967.503-20"
+    },
+    {
+      "id": 16,
+      "nome": "Dr. Enzo Gabriel Duarte",
+      "telefone": "+55 11 9306 9652",
+      "email": "cunhaaugusto@gmail.com",
+      "cpf": "197.568.432-09"
+    },
+    {
+      "id": 17,
+      "nome": "Alícia Mendes",
+      "telefone": "+55 (071) 1008-8945",
+      "email": "uramos@gmail.com",
+      "cpf": "347.162.085-08"
+    },
+    {
+      "id": 18,
+      "nome": "Rafaela das Neves",
+      "telefone": "+55 21 4417 8837",
+      "email": "fmoraes@gmail.com",
+      "cpf": "478.935.120-32"
+    },
+    {
+      "id": 19,
+      "nome": "Theo Silveira",
+      "telefone": "(051) 7904 0371",
+      "email": "msilveira@da.br",
+      "cpf": "673.125.049-06"
+    },
+    {
+      "id": 20,
+      "nome": "Dr. Augusto Moraes",
+      "telefone": "+55 71 7404 9288",
+      "email": "luiz-felipepires@bol.com.br",
+      "cpf": "610.548.392-98"
+    },
+    {
+      "id": 21,
+      "nome": "Maria Clara Martins",
+      "telefone": "84 9678-1997",
+      "email": "joao-lucas55@uol.com.br",
+      "cpf": "954.876.312-55"
+    },
+    {
+      "id": 22,
+      "nome": "Ana Vitória Duarte",
+      "telefone": "+55 (011) 2515 8791",
+      "email": "barrosthomas@fernandes.br",
+      "cpf": "086.532.917-68"
+    },
+    {
+      "id": 23,
+      "nome": "Nina Novaes",
+      "telefone": "+55 61 7655 6347",
+      "email": "araujoyago@uol.com.br",
+      "cpf": "976.380.415-93"
+    },
+    {
+      "id": 24,
+      "nome": "Bernardo Farias",
+      "telefone": "+55 (021) 2126-1816",
+      "email": "clara92@uol.com.br",
+      "cpf": "716.854.230-35"
+    },
+    {
+      "id": 25,
+      "nome": "Dr. Pedro Cavalcanti",
+      "telefone": "0800 109 0574",
+      "email": "arthuralves@pires.net",
+      "cpf": "580.369.127-59"
+    }
+  ],
+  "veiculos": [
+    {
+      "id": 1,
+      "cliente_id": 1,
+      "marca": "Sales S.A.",
+      "modelo": "Maiores",
+      "ano": 2018,
+      "placa": "YVB-3362"
+    },
+    {
+      "id": 2,
+      "cliente_id": 2,
+      "marca": "Teixeira Costa - EI",
+      "modelo": "Recusandae",
+      "ano": 2012,
+      "placa": "DAU-6521"
+    },
+    {
+      "id": 3,
+      "cliente_id": 3,
+      "marca": "Mendes das Neves Ltda.",
+      "modelo": "Quasi",
+      "ano": 2019,
+      "placa": "RQH-4878"
+    },
+    {
+      "id": 4,
+      "cliente_id": 4,
+      "marca": "Moura Ltda.",
+      "modelo": "Inventore",
+      "ano": 2023,
+      "placa": "HRN-9427"
+    },
+    {
+      "id": 5,
+      "cliente_id": 5,
+      "marca": "Cavalcanti Nogueira e Filhos",
+      "modelo": "Eum",
+      "ano": 2013,
+      "placa": "ASP-1034"
+    },
+    {
+      "id": 6,
+      "cliente_id": 6,
+      "marca": "Pires Nogueira - ME",
+      "modelo": "Fugit",
+      "ano": 2005,
+      "placa": "EMT-7672"
+    },
+    {
+      "id": 7,
+      "cliente_id": 7,
+      "marca": "Araújo",
+      "modelo": "Corrupti",
+      "ano": 2010,
+      "placa": "PLL-9545"
+    },
+    {
+      "id": 8,
+      "cliente_id": 8,
+      "marca": "Nunes",
+      "modelo": "Ad",
+      "ano": 2018,
+      "placa": "CCF-1990"
+    },
+    {
+      "id": 9,
+      "cliente_id": 9,
+      "marca": "Almeida",
+      "modelo": "Repudiandae",
+      "ano": 2015,
+      "placa": "IDZ-6485"
+    },
+    {
+      "id": 10,
+      "cliente_id": 10,
+      "marca": "Lopes",
+      "modelo": "Provident",
+      "ano": 2013,
+      "placa": "LTG-8044"
+    },
+    {
+      "id": 11,
+      "cliente_id": 11,
+      "marca": "Sales da Cunha e Filhos",
+      "modelo": "Cupiditate",
+      "ano": 2009,
+      "placa": "BFK-3693"
+    },
+    {
+      "id": 12,
+      "cliente_id": 12,
+      "marca": "Azevedo Carvalho e Filhos",
+      "modelo": "Ab",
+      "ano": 2011,
+      "placa": "ORS-1093"
+    },
+    {
+      "id": 13,
+      "cliente_id": 13,
+      "marca": "Jesus",
+      "modelo": "Reprehenderit",
+      "ano": 2015,
+      "placa": "OKM-8677"
+    },
+    {
+      "id": 14,
+      "cliente_id": 14,
+      "marca": "Novaes",
+      "modelo": "Fugit",
+      "ano": 2008,
+      "placa": "WUJ-2821"
+    },
+    {
+      "id": 15,
+      "cliente_id": 15,
+      "marca": "Araújo Farias S/A",
+      "modelo": "Deserunt",
+      "ano": 2007,
+      "placa": "CZC-8438"
+    },
+    {
+      "id": 16,
+      "cliente_id": 16,
+      "marca": "Nogueira",
+      "modelo": "Nemo",
+      "ano": 2017,
+      "placa": "RTH-8583"
+    },
+    {
+      "id": 17,
+      "cliente_id": 17,
+      "marca": "Silva",
+      "modelo": "Cumque",
+      "ano": 2008,
+      "placa": "VUO-7182"
+    },
+    {
+      "id": 18,
+      "cliente_id": 18,
+      "marca": "Silva Almeida - ME",
+      "modelo": "Dicta",
+      "ano": 2016,
+      "placa": "TNV-7022"
+    },
+    {
+      "id": 19,
+      "cliente_id": 19,
+      "marca": "Alves Jesus S/A",
+      "modelo": "Architecto",
+      "ano": 2016,
+      "placa": "RSA-1301"
+    },
+    {
+      "id": 20,
+      "cliente_id": 20,
+      "marca": "Araújo",
+      "modelo": "Quis",
+      "ano": 2013,
+      "placa": "UHL-8983"
+    },
+    {
+      "id": 21,
+      "cliente_id": 21,
+      "marca": "Lima Costa - EI",
+      "modelo": "Expedita",
+      "ano": 2006,
+      "placa": "ZLQ-1678"
+    },
+    {
+      "id": 22,
+      "cliente_id": 22,
+      "marca": "Cardoso",
+      "modelo": "Provident",
+      "ano": 2019,
+      "placa": "PIU-1313"
+    },
+    {
+      "id": 23,
+      "cliente_id": 23,
+      "marca": "Caldeira S.A.",
+      "modelo": "Debitis",
+      "ano": 2022,
+      "placa": "RAR-2041"
+    },
+    {
+      "id": 24,
+      "cliente_id": 24,
+      "marca": "Pinto Freitas e Filhos",
+      "modelo": "Repellat",
+      "ano": 2008,
+      "placa": "WTA-9734"
+    },
+    {
+      "id": 25,
+      "cliente_id": 25,
+      "marca": "Pires Alves - EI",
+      "modelo": "Sequi",
+      "ano": 2017,
+      "placa": "WEV-8448"
+    }
+  ],
+  "ordens_de_servico": [
+    {
+      "id": 1,
+      "veiculo_id": 3,
+      "data_entrada": "2025-03-10",
+      "data_saida": null,
+      "descricao": "Architecto iusto necessitatibus itaque explicabo.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 2,
+      "veiculo_id": 3,
+      "data_entrada": "2025-02-10",
+      "data_saida": "2025-04-06",
+      "descricao": "Modi corporis esse.",
+      "valor_total": 1313.08,
+      "status": "Concluído"
+    },
+    {
+      "id": 3,
+      "veiculo_id": 9,
+      "data_entrada": "2025-04-14",
+      "data_saida": "2025-05-11",
+      "descricao": "Quod quos modi.",
+      "valor_total": 952.78,
+      "status": "Concluído"
+    },
+    {
+      "id": 4,
+      "veiculo_id": 15,
+      "data_entrada": "2025-07-03",
+      "data_saida": null,
+      "descricao": "Aliquam aspernatur ad.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 5,
+      "veiculo_id": 11,
+      "data_entrada": "2025-05-14",
+      "data_saida": null,
+      "descricao": "Asperiores ratione suscipit in occaecati sint.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 6,
+      "veiculo_id": 21,
+      "data_entrada": "2025-04-15",
+      "data_saida": null,
+      "descricao": "Non eum ad architecto aperiam.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 7,
+      "veiculo_id": 9,
+      "data_entrada": "2025-04-15",
+      "data_saida": null,
+      "descricao": "Quis ipsum natus quasi occaecati eligendi.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 8,
+      "veiculo_id": 5,
+      "data_entrada": "2025-06-04",
+      "data_saida": "2025-07-29",
+      "descricao": "Ipsam nobis nihil.",
+      "valor_total": 1208.91,
+      "status": "Concluído"
+    },
+    {
+      "id": 9,
+      "veiculo_id": 18,
+      "data_entrada": "2025-06-13",
+      "data_saida": "2025-08-02",
+      "descricao": "Totam commodi itaque asperiores sunt.",
+      "valor_total": 1052.4,
+      "status": "Concluído"
+    },
+    {
+      "id": 10,
+      "veiculo_id": 25,
+      "data_entrada": "2025-05-09",
+      "data_saida": null,
+      "descricao": "Nisi iure nulla quis.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 11,
+      "veiculo_id": 6,
+      "data_entrada": "2025-04-26",
+      "data_saida": null,
+      "descricao": "Officiis ducimus sequi minima dolore.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 12,
+      "veiculo_id": 25,
+      "data_entrada": "2025-02-14",
+      "data_saida": "2025-06-16",
+      "descricao": "Earum nesciunt ipsum voluptate laborum rem.",
+      "valor_total": 810.75,
+      "status": "Concluído"
+    },
+    {
+      "id": 13,
+      "veiculo_id": 17,
+      "data_entrada": "2025-05-20",
+      "data_saida": "2025-05-30",
+      "descricao": "Quisquam dolores sunt commodi provident.",
+      "valor_total": 313.97,
+      "status": "Concluído"
+    },
+    {
+      "id": 14,
+      "veiculo_id": 11,
+      "data_entrada": "2025-02-09",
+      "data_saida": null,
+      "descricao": "Itaque aspernatur voluptatem.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 15,
+      "veiculo_id": 10,
+      "data_entrada": "2025-05-03",
+      "data_saida": "2025-05-16",
+      "descricao": "Facere sequi nisi perferendis.",
+      "valor_total": 181.1,
+      "status": "Concluído"
+    },
+    {
+      "id": 16,
+      "veiculo_id": 16,
+      "data_entrada": "2025-07-09",
+      "data_saida": "2025-08-01",
+      "descricao": "Saepe eos nesciunt debitis ipsam voluptatibus.",
+      "valor_total": 1469.18,
+      "status": "Concluído"
+    },
+    {
+      "id": 17,
+      "veiculo_id": 6,
+      "data_entrada": "2025-06-15",
+      "data_saida": null,
+      "descricao": "Deserunt dignissimos quod quia ullam.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 18,
+      "veiculo_id": 17,
+      "data_entrada": "2025-01-23",
+      "data_saida": null,
+      "descricao": "Veniam quod quasi accusantium.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 19,
+      "veiculo_id": 3,
+      "data_entrada": "2025-02-06",
+      "data_saida": null,
+      "descricao": "Commodi nulla nesciunt.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 20,
+      "veiculo_id": 8,
+      "data_entrada": "2025-02-09",
+      "data_saida": "2025-03-24",
+      "descricao": "Numquam enim accusamus deserunt eveniet.",
+      "valor_total": 110.07,
+      "status": "Concluído"
+    },
+    {
+      "id": 21,
+      "veiculo_id": 2,
+      "data_entrada": "2025-01-22",
+      "data_saida": null,
+      "descricao": "Minus quia expedita porro consequuntur eum.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 22,
+      "veiculo_id": 9,
+      "data_entrada": "2025-02-17",
+      "data_saida": null,
+      "descricao": "Non blanditiis temporibus officiis veniam.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    },
+    {
+      "id": 23,
+      "veiculo_id": 16,
+      "data_entrada": "2025-01-03",
+      "data_saida": "2025-07-24",
+      "descricao": "Magni quibusdam illum libero optio nemo.",
+      "valor_total": 1198.47,
+      "status": "Concluído"
+    },
+    {
+      "id": 24,
+      "veiculo_id": 15,
+      "data_entrada": "2025-03-31",
+      "data_saida": "2025-04-30",
+      "descricao": "Quisquam perspiciatis explicabo dolorum quis.",
+      "valor_total": 1042.71,
+      "status": "Concluído"
+    },
+    {
+      "id": 25,
+      "veiculo_id": 24,
+      "data_entrada": "2025-07-30",
+      "data_saida": null,
+      "descricao": "Ipsum quod possimus vitae.",
+      "valor_total": 0.0,
+      "status": "Em andamento"
+    }
+  ],
+  "estoque": [
+    {
+      "id": 1,
+      "nome": "Filtro de óleo",
+      "quantidade": 91,
+      "preco_unitario": 60.06
+    },
+    {
+      "id": 2,
+      "nome": "Óleo 5W30",
+      "quantidade": 45,
+      "preco_unitario": 96.12
+    },
+    {
+      "id": 3,
+      "nome": "Pastilha de freio",
+      "quantidade": 27,
+      "preco_unitario": 228.85
+    },
+    {
+      "id": 4,
+      "nome": "Correia dentada",
+      "quantidade": 96,
+      "preco_unitario": 229.98
+    },
+    {
+      "id": 5,
+      "nome": "Amortecedor",
+      "quantidade": 79,
+      "preco_unitario": 53.47
+    },
+    {
+      "id": 6,
+      "nome": "Velas de ignição",
+      "quantidade": 64,
+      "preco_unitario": 38.58
+    },
+    {
+      "id": 7,
+      "nome": "Bateria 60Ah",
+      "quantidade": 21,
+      "preco_unitario": 89.03
+    },
+    {
+      "id": 8,
+      "nome": "Lâmpada H7",
+      "quantidade": 74,
+      "preco_unitario": 192.55
+    },
+    {
+      "id": 9,
+      "nome": "Disco de freio",
+      "quantidade": 81,
+      "preco_unitario": 83.69
+    },
+    {
+      "id": 10,
+      "nome": "Pneu 195/55 R15",
+      "quantidade": 93,
+      "preco_unitario": 219.36
+    }
+  ],
+  "vendas": [
+    {
+      "id": 1,
+      "cliente_id": 3,
+      "data": "2025-03-10",
+      "itens": [
+        {
+          "produto_id": 10,
+          "quantidade": 1,
+          "preco_unitario": 219.36
+        },
+        {
+          "produto_id": 2,
+          "quantidade": 1,
+          "preco_unitario": 96.12
+        },
+        {
+          "produto_id": 4,
+          "quantidade": 2,
+          "preco_unitario": 229.98
+        }
+      ],
+      "valor_total": 775.44
+    },
+    {
+      "id": 2,
+      "cliente_id": 3,
+      "data": "2025-02-10",
+      "itens": [
+        {
+          "produto_id": 5,
+          "quantidade": 2,
+          "preco_unitario": 53.47
+        },
+        {
+          "produto_id": 6,
+          "quantidade": 1,
+          "preco_unitario": 38.58
+        },
+        {
+          "produto_id": 6,
+          "quantidade": 2,
+          "preco_unitario": 38.58
+        },
+        {
+          "produto_id": 4,
+          "quantidade": 3,
+          "preco_unitario": 229.98
+        }
+      ],
+      "valor_total": 912.62
+    },
+    {
+      "id": 3,
+      "cliente_id": 9,
+      "data": "2025-04-14",
+      "itens": [
+        {
+          "produto_id": 9,
+          "quantidade": 3,
+          "preco_unitario": 83.69
+        },
+        {
+          "produto_id": 4,
+          "quantidade": 1,
+          "preco_unitario": 229.98
+        }
+      ],
+      "valor_total": 481.05
+    },
+    {
+      "id": 4,
+      "cliente_id": 15,
+      "data": "2025-07-03",
+      "itens": [
+        {
+          "produto_id": 9,
+          "quantidade": 1,
+          "preco_unitario": 83.69
+        },
+        {
+          "produto_id": 6,
+          "quantidade": 1,
+          "preco_unitario": 38.58
+        },
+        {
+          "produto_id": 4,
+          "quantidade": 1,
+          "preco_unitario": 229.98
+        }
+      ],
+      "valor_total": 352.25
+    },
+    {
+      "id": 5,
+      "cliente_id": 11,
+      "data": "2025-05-14",
+      "itens": [
+        {
+          "produto_id": 2,
+          "quantidade": 1,
+          "preco_unitario": 96.12
+        },
+        {
+          "produto_id": 10,
+          "quantidade": 3,
+          "preco_unitario": 219.36
+        },
+        {
+          "produto_id": 6,
+          "quantidade": 1,
+          "preco_unitario": 38.58
+        }
+      ],
+      "valor_total": 792.78
+    },
+    {
+      "id": 6,
+      "cliente_id": 21,
+      "data": "2025-04-15",
+      "itens": [
+        {
+          "produto_id": 8,
+          "quantidade": 1,
+          "preco_unitario": 192.55
+        },
+        {
+          "produto_id": 5,
+          "quantidade": 1,
+          "preco_unitario": 53.47
+        },
+        {
+          "produto_id": 4,
+          "quantidade": 3,
+          "preco_unitario": 229.98
+        },
+        {
+          "produto_id": 9,
+          "quantidade": 3,
+          "preco_unitario": 83.69
+        }
+      ],
+      "valor_total": 1187.03
+    },
+    {
+      "id": 7,
+      "cliente_id": 9,
+      "data": "2025-04-15",
+      "itens": [
+        {
+          "produto_id": 6,
+          "quantidade": 1,
+          "preco_unitario": 38.58
+        },
+        {
+          "produto_id": 3,
+          "quantidade": 3,
+          "preco_unitario": 228.85
+        },
+        {
+          "produto_id": 8,
+          "quantidade": 1,
+          "preco_unitario": 192.55
+        },
+        {
+          "produto_id": 1,
+          "quantidade": 1,
+          "preco_unitario": 60.06
+        }
+      ],
+      "valor_total": 977.74
+    },
+    {
+      "id": 8,
+      "cliente_id": 5,
+      "data": "2025-06-04",
+      "itens": [
+        {
+          "produto_id": 10,
+          "quantidade": 1,
+          "preco_unitario": 219.36
+        },
+        {
+          "produto_id": 7,
+          "quantidade": 2,
+          "preco_unitario": 89.03
+        },
+        {
+          "produto_id": 10,
+          "quantidade": 2,
+          "preco_unitario": 219.36
+        },
+        {
+          "produto_id": 9,
+          "quantidade": 2,
+          "preco_unitario": 83.69
+        }
+      ],
+      "valor_total": 1003.52
+    },
+    {
+      "id": 9,
+      "cliente_id": 18,
+      "data": "2025-06-13",
+      "itens": [
+        {
+          "produto_id": 9,
+          "quantidade": 2,
+          "preco_unitario": 83.69
+        }
+      ],
+      "valor_total": 167.38
+    },
+    {
+      "id": 10,
+      "cliente_id": 25,
+      "data": "2025-05-09",
+      "itens": [
+        {
+          "produto_id": 5,
+          "quantidade": 2,
+          "preco_unitario": 53.47
+        }
+      ],
+      "valor_total": 106.94
+    },
+    {
+      "id": 11,
+      "cliente_id": 6,
+      "data": "2025-04-26",
+      "itens": [
+        {
+          "produto_id": 5,
+          "quantidade": 3,
+          "preco_unitario": 53.47
+        }
+      ],
+      "valor_total": 160.41
+    },
+    {
+      "id": 12,
+      "cliente_id": 25,
+      "data": "2025-02-14",
+      "itens": [
+        {
+          "produto_id": 5,
+          "quantidade": 3,
+          "preco_unitario": 53.47
+        }
+      ],
+      "valor_total": 160.41
+    },
+    {
+      "id": 13,
+      "cliente_id": 17,
+      "data": "2025-05-20",
+      "itens": [
+        {
+          "produto_id": 9,
+          "quantidade": 3,
+          "preco_unitario": 83.69
+        },
+        {
+          "produto_id": 1,
+          "quantidade": 3,
+          "preco_unitario": 60.06
+        }
+      ],
+      "valor_total": 431.25
+    },
+    {
+      "id": 14,
+      "cliente_id": 11,
+      "data": "2025-02-09",
+      "itens": [
+        {
+          "produto_id": 2,
+          "quantidade": 2,
+          "preco_unitario": 96.12
+        }
+      ],
+      "valor_total": 192.24
+    },
+    {
+      "id": 15,
+      "cliente_id": 10,
+      "data": "2025-05-03",
+      "itens": [
+        {
+          "produto_id": 2,
+          "quantidade": 3,
+          "preco_unitario": 96.12
+        }
+      ],
+      "valor_total": 288.36
+    },
+    {
+      "id": 16,
+      "cliente_id": 16,
+      "data": "2025-07-09",
+      "itens": [
+        {
+          "produto_id": 3,
+          "quantidade": 3,
+          "preco_unitario": 228.85
+        },
+        {
+          "produto_id": 8,
+          "quantidade": 3,
+          "preco_unitario": 192.55
+        }
+      ],
+      "valor_total": 1264.2
+    },
+    {
+      "id": 17,
+      "cliente_id": 6,
+      "data": "2025-06-15",
+      "itens": [
+        {
+          "produto_id": 4,
+          "quantidade": 3,
+          "preco_unitario": 229.98
+        },
+        {
+          "produto_id": 4,
+          "quantidade": 3,
+          "preco_unitario": 229.98
+        },
+        {
+          "produto_id": 5,
+          "quantidade": 2,
+          "preco_unitario": 53.47
+        },
+        {
+          "produto_id": 6,
+          "quantidade": 2,
+          "preco_unitario": 38.58
+        }
+      ],
+      "valor_total": 1563.98
+    },
+    {
+      "id": 18,
+      "cliente_id": 17,
+      "data": "2025-01-23",
+      "itens": [
+        {
+          "produto_id": 4,
+          "quantidade": 1,
+          "preco_unitario": 229.98
+        }
+      ],
+      "valor_total": 229.98
+    },
+    {
+      "id": 19,
+      "cliente_id": 3,
+      "data": "2025-02-06",
+      "itens": [
+        {
+          "produto_id": 10,
+          "quantidade": 3,
+          "preco_unitario": 219.36
+        }
+      ],
+      "valor_total": 658.08
+    },
+    {
+      "id": 20,
+      "cliente_id": 8,
+      "data": "2025-02-09",
+      "itens": [
+        {
+          "produto_id": 4,
+          "quantidade": 1,
+          "preco_unitario": 229.98
+        }
+      ],
+      "valor_total": 229.98
+    },
+    {
+      "id": 21,
+      "cliente_id": 2,
+      "data": "2025-01-22",
+      "itens": [
+        {
+          "produto_id": 9,
+          "quantidade": 1,
+          "preco_unitario": 83.69
+        }
+      ],
+      "valor_total": 83.69
+    },
+    {
+      "id": 22,
+      "cliente_id": 9,
+      "data": "2025-02-17",
+      "itens": [
+        {
+          "produto_id": 9,
+          "quantidade": 1,
+          "preco_unitario": 83.69
+        },
+        {
+          "produto_id": 10,
+          "quantidade": 3,
+          "preco_unitario": 219.36
+        }
+      ],
+      "valor_total": 741.77
+    },
+    {
+      "id": 23,
+      "cliente_id": 16,
+      "data": "2025-01-03",
+      "itens": [
+        {
+          "produto_id": 4,
+          "quantidade": 1,
+          "preco_unitario": 229.98
+        },
+        {
+          "produto_id": 2,
+          "quantidade": 3,
+          "preco_unitario": 96.12
+        },
+        {
+          "produto_id": 7,
+          "quantidade": 2,
+          "preco_unitario": 89.03
+        },
+        {
+          "produto_id": 7,
+          "quantidade": 2,
+          "preco_unitario": 89.03
+        }
+      ],
+      "valor_total": 874.46
+    },
+    {
+      "id": 24,
+      "cliente_id": 15,
+      "data": "2025-03-31",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade": 2,
+          "preco_unitario": 60.06
+        }
+      ],
+      "valor_total": 120.12
+    },
+    {
+      "id": 25,
+      "cliente_id": 24,
+      "data": "2025-07-30",
+      "itens": [
+        {
+          "produto_id": 4,
+          "quantidade": 1,
+          "preco_unitario": 229.98
+        }
+      ],
+      "valor_total": 229.98
+    }
+  ]
+}
