@@ -2,25 +2,20 @@ package com.gomech.model;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-@Entity
+@Entity(name = "users")
 @Table(name = "users")
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode(of = "id")
 public class User implements UserDetails {
 
     @Id
@@ -33,24 +28,18 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
     private Role role;
+
+    public User(String email, String password, Role roleId) {
+        this.email = email;
+        this.password = password;
+        this.role = roleId;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (this.role == null || this.role.getAuthorities() == null) {
-            return new ArrayList<>();
-        }
-        
-        List<SimpleGrantedAuthority> authoritiesList = new ArrayList<>();
-        String[] authorities = this.role.getAuthorities().split(",");
-        Arrays.asList(authorities).forEach(a -> {
-            if (a != null && !a.trim().isEmpty()) {
-                authoritiesList.add(new SimpleGrantedAuthority(a.trim()));
-            }
-        });
-        return authoritiesList;
+        if(this.role == Role.ADMIN) return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
+        else return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override
