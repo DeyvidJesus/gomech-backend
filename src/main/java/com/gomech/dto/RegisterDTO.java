@@ -2,5 +2,5 @@ package com.gomech.dto;
 
 import com.gomech.model.Role;
 
-public record RegisterDTO(String email, String password, Role role) {
+public record RegisterDTO(String name, String email, String password, Role role) {
 }

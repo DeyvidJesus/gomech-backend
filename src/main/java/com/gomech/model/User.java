@@ -21,19 +21,25 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
+    @Column(unique = true)
+    private String name;
+
     @Column(unique = true, nullable = false)
     private String email;
     
     @Column(nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
-    public User(String email, String password, Role roleId) {
+    public User(String name, String email, String password, Role role) {
+        this.name = email;
         this.email = email;
         this.password = password;
-        this.role = roleId;
+        this.role = role;
     }
 
     @Override
@@ -49,7 +55,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.email;
+        return this.name;
     }
 
     @Override
