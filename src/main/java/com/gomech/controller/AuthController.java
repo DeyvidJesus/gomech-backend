@@ -36,7 +36,7 @@ public class AuthController {
         var user = repository.findByEmail(data.email());
         var token = tokenService.generateToken((User) auth.getPrincipal());
 
-        return ResponseEntity.ok(new LoginResponseDTO(token, user.getName(), user.getEmail(), user.getRole().name()));
+        return ResponseEntity.ok(new LoginResponseDTO(token, user.getEmail(), user.getName(), user.getRole().name()));
     }
 
     @PostMapping("/register")
