@@ -28,7 +28,7 @@ public class Vehicle {
     private String vehicleId;
 
     @ManyToOne
-    @JoinColumn(name = "client_id")
+    @JoinColumn(name = "id")
     private Client client;
 
     @Id
