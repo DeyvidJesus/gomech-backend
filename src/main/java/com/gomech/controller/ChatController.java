@@ -17,10 +17,10 @@ public class ChatController {
                 .build();
     }
 
-    @GetMapping
-    public String chat() {
+    @PostMapping
+    public String chat(String prompt) {
         return chatClient.prompt()
-                .user("Gere um relatório com gráficos e descrições claras de como os clientes tem comprado, e a frequencia de suas compras e serviços. De acordo com os dados lidos no arquivo .json")
+                .user(prompt + "De acordo com os dados da loja, sejam eles .json ou .xls/.xlsx")
                 .call()
                 .content();
     }
