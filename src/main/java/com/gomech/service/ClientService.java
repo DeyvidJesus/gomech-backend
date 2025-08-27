@@ -40,7 +40,6 @@ public class ClientService {
         return repository.findAll();
     }
 
-
     public Optional<Client> getById(Long id) {
         return repository.findById(id);
     }

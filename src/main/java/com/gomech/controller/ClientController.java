@@ -30,8 +30,8 @@ public class ClientController {
     }
 
     @GetMapping
-    public List<Client> list() {
-        return service.listAll();
+    public ResponseEntity<List<Client>> list() {
+        return ResponseEntity.ok(service.listAll());
     }
 
     @GetMapping("/export")

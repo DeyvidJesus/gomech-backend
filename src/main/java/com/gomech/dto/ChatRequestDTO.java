@@ -1,13 +1,20 @@
 package com.gomech.dto;
 
 public class ChatRequestDTO {
-    private String message;
 
-    public String getMessage() {
-        return message;
+    private String prompt;
+
+    public ChatRequestDTO() {}
+
+    public ChatRequestDTO(String prompt) {
+        this.prompt = prompt;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public String getPrompt() {
+        return prompt;
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
     }
 }
