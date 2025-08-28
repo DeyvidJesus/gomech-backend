@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Setter
@@ -26,12 +29,22 @@ public class Vehicle {
 
     private float kilometers;
 
-    private String vehicleId;
+    private String chassisId;
 
     @ManyToOne
     @JoinColumn(name = "client_id")
     @JsonIgnore
     private Client client;
+
+    @Column(name = "client_id", insertable = false, updatable = false)
+    private Long clientId;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +52,7 @@ public class Vehicle {
 
     public Vehicle() {}
 
-    public Vehicle(String licensePlate, String brand, String model, Date manufactureDate, String color, String observations, float kilometers, String vehicleId) {
+    public Vehicle(String licensePlate, String brand, String model, Date manufactureDate, String color, String observations, float kilometers, String chassisId) {
         this.licensePlate = licensePlate;
         this.brand = brand;
         this.model = model;
@@ -47,7 +60,7 @@ public class Vehicle {
         this.color = color;
         this.observations = observations;
         this.kilometers = kilometers;
-        this.vehicleId = vehicleId;
+        this.chassisId = chassisId;
     }
 
 }
