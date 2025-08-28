@@ -140,9 +140,9 @@ public class VehicleService {
                 vehicle.setKilometers(Float.parseFloat(km));
             } catch (NumberFormatException ignored) {}
         }
-        vehicle.setVehicleId(getter.apply("vehicleId"));
-        if (vehicle.getVehicleId() == null) {
-            vehicle.setVehicleId(getter.apply("vehicleid"));
+        vehicle.setChassisId(getter.apply("chassisId"));
+        if (vehicle.getChassisId() == null) {
+            vehicle.setChassisId(getter.apply("chassisid"));
         }
 
         return vehicle;
@@ -159,11 +159,11 @@ public class VehicleService {
         List<Vehicle> vehicles = repository.findAll();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (CSVPrinter printer = new CSVPrinter(new PrintWriter(out),
-                CSVFormat.DEFAULT.withHeader("licensePlate", "brand", "model", "manufactureDate", "color", "observations", "kilometers", "vehicleId"))) {
+                CSVFormat.DEFAULT.withHeader("licensePlate", "brand", "model", "manufactureDate", "color", "observations", "kilometers", "chassisId"))) {
             for (Vehicle v : vehicles) {
                 String manufactureDate = v.getManufactureDate() != null ?
                         LocalDate.ofInstant(v.getManufactureDate().toInstant(), ZoneId.systemDefault()).toString() : "";
-                printer.printRecord(v.getLicensePlate(), v.getBrand(), v.getModel(), manufactureDate, v.getColor(), v.getObservations(), v.getKilometers(), v.getVehicleId());
+                printer.printRecord(v.getLicensePlate(), v.getBrand(), v.getModel(), manufactureDate, v.getColor(), v.getObservations(), v.getKilometers(), v.getChassisId());
             }
         } catch (IOException e) {
             throw new RuntimeException("Falha ao gerar CSV", e);
@@ -175,7 +175,7 @@ public class VehicleService {
         List<Vehicle> vehicles = repository.findAll();
         try (Workbook workbook = WorkbookFactory.create(true); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("vehicles");
-            String[] headers = {"licensePlate", "brand", "model", "manufactureDate", "color", "observations", "kilometers", "vehicleId"};
+            String[] headers = {"licensePlate", "brand", "model", "manufactureDate", "color", "observations", "kilometers", "chassisId"};
             Row header = sheet.createRow(0);
             for (int i = 0; i < headers.length; i++) {
                 header.createCell(i).setCellValue(headers[i]);
@@ -192,7 +192,7 @@ public class VehicleService {
                 row.createCell(4).setCellValue(v.getColor());
                 row.createCell(5).setCellValue(v.getObservations());
                 row.createCell(6).setCellValue(v.getKilometers());
-                row.createCell(7).setCellValue(v.getVehicleId());
+                row.createCell(7).setCellValue(v.getChassisId());
             }
             workbook.write(out);
             return new ByteArrayInputStream(out.toByteArray());

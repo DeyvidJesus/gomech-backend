@@ -76,8 +76,9 @@ src/main/java/com/gomech/
 - **address**: Endereço
 - **birthDate**: Data de nascimento
 - **observations**: Observações
-- **registrationDate**: Data de cadastro
 - **vehicles**: Lista de veículos (relacionamento OneToMany)
+- **createdAt**: Data de criação
+- **updatedAt**: Data de atualização
 
 #### Vehicle (Veículo)
 - **id**: Identificador único
@@ -88,8 +89,50 @@ src/main/java/com/gomech/
 - **color**: Cor
 - **observations**: Observações
 - **kilometers**: Quilometragem
-- **vehicleId**: Identificador do veículo
+- **chassisId**: Identificador do chassi do veículo
+- **clientId**: ID do cliente proprietário
 - **client**: Cliente proprietário (relacionamento ManyToOne)
+- **createdAt**: Data de criação
+- **updatedAt**: Data de atualização
+
+#### ServiceOrder (Ordem de Serviço)
+- **id**: Identificador único
+- **orderNumber**: Número único da OS (formato: OS-YYYYMMDD-HHMMSS)
+- **vehicleId**: ID do veículo
+- **clientId**: ID do cliente
+- **description**: Descrição do serviço
+- **problemDescription**: Descrição do problema
+- **diagnosis**: Diagnóstico
+- **solutionDescription**: Descrição da solução
+- **status**: Status da OS (enum)
+- **laborCost**: Custo da mão de obra
+- **partsCost**: Custo das peças
+- **totalCost**: Custo total
+- **discount**: Desconto aplicado
+- **finalCost**: Custo final
+- **estimatedCompletion**: Previsão de conclusão
+- **actualCompletion**: Data de conclusão real
+- **observations**: Observações
+- **technicianName**: Nome do técnico
+- **currentKilometers**: Quilometragem atual
+- **items**: Lista de itens da OS
+- **createdAt**: Data de criação
+- **updatedAt**: Data de atualização
+
+#### ServiceOrderItem (Item da Ordem de Serviço)
+- **id**: Identificador único
+- **description**: Descrição do item
+- **itemType**: Tipo do item (SERVICE, PART, MATERIAL, LABOR)
+- **quantity**: Quantidade
+- **unitPrice**: Preço unitário
+- **totalPrice**: Preço total
+- **productCode**: Código do produto (para controle de estoque)
+- **requiresStock**: Indica se requer controle de estoque
+- **stockReserved**: Indica se o estoque está reservado
+- **applied**: Indica se o item foi aplicado
+- **observations**: Observações
+- **createdAt**: Data de criação
+- **updatedAt**: Data de atualização
 
 #### User (Usuário)
 - **id**: Identificador único
@@ -143,6 +186,34 @@ O sistema implementa autenticação baseada em JWT com as seguintes característ
 ### Autenticação (`/api/auth`)
 - `POST /api/auth/login` - Gerar token JWT
 - `POST /api/auth/register` - Criar novo usuário
+
+### Ordens de Serviço (`/api/service-orders`)
+- `POST /api/service-orders` - Criar nova ordem de serviço
+- `GET /api/service-orders` - Listar todas as ordens de serviço
+- `GET /api/service-orders/{id}` - Buscar ordem de serviço por ID
+- `GET /api/service-orders/order-number/{orderNumber}` - Buscar por número da OS
+- `GET /api/service-orders/status/{status}` - Buscar ordens por status
+- `GET /api/service-orders/client/{clientId}` - Ordens de um cliente
+- `GET /api/service-orders/vehicle/{vehicleId}` - Ordens de um veículo
+- `GET /api/service-orders/vehicle/{vehicleId}/history` - Histórico do veículo
+- `PUT /api/service-orders/{id}` - Atualizar ordem de serviço
+- `PUT /api/service-orders/{id}/status` - Atualizar apenas status
+- `DELETE /api/service-orders/{id}` - Excluir ordem de serviço
+
+#### Relatórios
+- `GET /api/service-orders/reports/overdue` - Ordens atrasadas
+- `GET /api/service-orders/reports/waiting-parts` - Aguardando peças
+- `GET /api/service-orders/reports/waiting-approval` - Aguardando aprovação
+
+#### Itens da Ordem de Serviço
+- `POST /api/service-orders/{id}/items` - Adicionar item à OS
+- `GET /api/service-orders/{id}/items` - Listar itens da OS
+- `PUT /api/service-orders/items/{itemId}` - Atualizar item
+- `DELETE /api/service-orders/items/{itemId}` - Excluir item
+- `PUT /api/service-orders/items/{itemId}/apply` - Aplicar item
+- `PUT /api/service-orders/items/{itemId}/unapply` - Desaplicar item
+- `PUT /api/service-orders/items/{itemId}/reserve-stock` - Reservar estoque
+- `PUT /api/service-orders/items/{itemId}/release-stock` - Liberar estoque
 
 ## ⚙️ Configuração do Ambiente
 
@@ -236,7 +307,8 @@ java -jar target/Gomech-0.0.1-SNAPSHOT.jar
       "manufactureDate": "2020-01-01",
       "color": "Branco",
       "kilometers": 50000.0,
-      "vehicleId": "VH001",
+      "chassisId": "VH001",
+      "clientId": 1,
       "observations": "Revisão em dia"
     }
   ]

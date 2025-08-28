@@ -3,7 +3,10 @@ package com.gomech.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -26,10 +29,15 @@ public class Client {
 
     private String observations;
 
-    private Date registrationDate = new Date();
-
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Vehicle> vehicles;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
