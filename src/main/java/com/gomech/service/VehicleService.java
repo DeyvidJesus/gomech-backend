@@ -1,6 +1,8 @@
 package com.gomech.service;
 
+import com.gomech.model.Client;
 import com.gomech.model.Vehicle;
+import com.gomech.repository.ClientRepository;
 import com.gomech.repository.VehicleRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -27,18 +29,40 @@ import java.util.*;
 public class VehicleService {
     @Autowired
     private VehicleRepository repository;
+    
+    @Autowired
+    private ClientRepository clientRepository;
 
     public Vehicle save(Vehicle vehicle) {
+        // Se foi fornecido um clientId, buscar e associar o cliente
+        if (vehicle.getClientId() != null) {
+            Client client = clientRepository.findById(vehicle.getClientId())
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + vehicle.getClientId()));
+            vehicle.setClient(client);
+        }
         return repository.save(vehicle);
     }
 
     public List<Vehicle> listAll() {
-        return repository.findAll();
+        List<Vehicle> vehicles = repository.findAll();
+        // Garantir que o clientId seja populado corretamente na resposta
+        vehicles.forEach(vehicle -> {
+            if (vehicle.getClient() != null) {
+                vehicle.setClientId(vehicle.getClient().getId());
+            }
+        });
+        return vehicles;
     }
 
 
     public Optional<Vehicle> getById(Long id) {
-        return repository.findById(id);
+        Optional<Vehicle> vehicleOpt = repository.findById(id);
+        vehicleOpt.ifPresent(vehicle -> {
+            if (vehicle.getClient() != null) {
+                vehicle.setClientId(vehicle.getClient().getId());
+            }
+        });
+        return vehicleOpt;
     }
 
     public void delete(Long id) {
@@ -52,7 +76,18 @@ public class VehicleService {
         vehicle.setBrand(updatedVehicle.getBrand());
         vehicle.setModel(updatedVehicle.getModel());
         vehicle.setColor(updatedVehicle.getColor());
-        vehicle.setManufactureDate((updatedVehicle.getManufactureDate()));
+        vehicle.setManufactureDate(updatedVehicle.getManufactureDate());
+        vehicle.setObservations(updatedVehicle.getObservations());
+        vehicle.setKilometers(updatedVehicle.getKilometers());
+        vehicle.setChassisId(updatedVehicle.getChassisId());
+        
+        // Se foi fornecido um clientId, buscar e associar o cliente
+        if (updatedVehicle.getClientId() != null) {
+            Client client = clientRepository.findById(updatedVehicle.getClientId())
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + updatedVehicle.getClientId()));
+            vehicle.setClient(client);
+        }
+        
         return repository.save(vehicle);
     }
 
