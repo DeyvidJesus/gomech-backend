@@ -31,12 +31,12 @@ public class Vehicle {
 
     private String chassisId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
     @JsonIgnore
     private Client client;
 
-    @Column(name = "client_id", insertable = false, updatable = false)
+    @Transient
     private Long clientId;
 
     @CreationTimestamp
@@ -63,4 +63,12 @@ public class Vehicle {
         this.chassisId = chassisId;
     }
 
+    // Métodos personalizados para clientId
+    public Long getClientId() {
+        return this.client != null ? this.client.getId() : this.clientId;
+    }
+
+    public void setClientId(Long clientId) {
+        this.clientId = clientId;
+    }
 }
