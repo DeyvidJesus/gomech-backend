@@ -85,10 +85,11 @@ public class ServiceOrder {
     private List<ServiceOrderItem> items = new ArrayList<>();
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "createdAt", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updatedAt")
     private LocalDateTime updatedAt;
 
     public ServiceOrder() {
