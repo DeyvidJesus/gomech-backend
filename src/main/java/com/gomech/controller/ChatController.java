@@ -13,6 +13,7 @@ import com.gomech.service.PythonAiService;
 public class ChatController {
 
     private final PythonAiService pythonAiService;
+    private final PythonAiService pythonAiService;
 
     public ChatController(PythonAiService pythonAiService) {
         this.pythonAiService = pythonAiService;
@@ -31,12 +32,14 @@ public class ChatController {
         public String getStatus() { return status; }
     }
 
-    @PostMapping
-    public ResponseEntity<ChatResponseDTO> chat(@RequestBody ChatRequestDTO request) {
+        @PostMapping
+    public ResponseEntity<EnhancedChatResponseDTO> chat(@RequestBody ChatRequestDTO request) {
+        long startTime = System.currentTimeMillis();
+        
         try {
             if (request.getPrompt() == null || request.getPrompt().isBlank()) {
                 return ResponseEntity.badRequest()
-                        .body(new ChatResponseDTO(null, "Prompt não pode ser vazio"));
+                        .body(new EnhancedChatResponseDTO(null, "Prompt não pode ser vazio"));
             }
 
             // Cria request para o Python AI Service - sempre usando IA forte com RAG
@@ -51,8 +54,25 @@ public class ChatController {
             return ResponseEntity.ok(new ChatResponseDTO(aiResponse.getAnswer(), "success"));
 
         } catch (Exception e) {
+            long processingTime = System.currentTimeMillis() - startTime;
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ChatResponseDTO(null, "Erro ao processar o prompt: " + e.getMessage()));
+                    .body(new EnhancedChatResponseDTO(null, "Erro ao processar o prompt: " + e.getMessage(), 
+                          null, "error", processingTime));
         }
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<Object> getAiServiceStatus() {
+        boolean serviceAvailable = pythonAiService.isServiceAvailable();
+        
+        return ResponseEntity.ok(new Object() {
+            public final boolean pythonAiServiceAvailable = serviceAvailable;
+            public final boolean standardAiAvailable = serviceAvailable;
+            public final boolean enhancedAiAvailable = serviceAvailable;
+            public final String status = serviceAvailable ? "available" : "unavailable";
+            public final String message = serviceAvailable ? 
+                "Python AI Service está funcionando - Ambos os tipos de IA disponíveis" : 
+                "Python AI Service não está disponível";
+        });
     }
 }
