@@ -62,10 +62,11 @@ public class ServiceOrderItem {
     private Boolean applied = false;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "createdAt", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updatedAt")
     private LocalDateTime updatedAt;
 
     @PrePersist

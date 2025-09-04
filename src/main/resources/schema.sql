@@ -59,8 +59,8 @@ CREATE TABLE service_orders (
     observations CLOB,
     technician_name VARCHAR2(100),
     current_kilometers NUMBER(10,2),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_service_orders_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
     CONSTRAINT fk_service_orders_client FOREIGN KEY (client_id) REFERENCES clients(id)
 );
@@ -80,8 +80,8 @@ CREATE TABLE service_order_items (
     stock_product_id NUMBER,
     applied NUMBER(1) DEFAULT 0,
     observations CLOB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_service_order_items_so FOREIGN KEY (service_order_id) REFERENCES service_orders(id) ON DELETE CASCADE
 );
 
@@ -89,7 +89,7 @@ CREATE TABLE service_order_items (
 CREATE INDEX idx_service_orders_status ON service_orders(status);
 CREATE INDEX idx_service_orders_client ON service_orders(client_id);
 CREATE INDEX idx_service_orders_vehicle ON service_orders(vehicle_id);
-CREATE INDEX idx_service_orders_created ON service_orders(created_at);
+CREATE INDEX idx_service_orders_created ON service_orders(createdAt);
 CREATE INDEX idx_service_orders_technician ON service_orders(technician_name);
 CREATE INDEX idx_service_orders_estimated ON service_orders(estimated_completion);
 
