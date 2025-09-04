@@ -1,14 +1,12 @@
 package com.gomech.dto;
 
 import com.gomech.model.ServiceOrderStatus;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 public class ServiceOrderUpdateDTO {
     private String description;
     private String problemDescription;
