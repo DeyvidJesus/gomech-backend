@@ -1,23 +1,21 @@
 package com.gomech.controller;
 
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.gomech.dto.ChatRequestDTO;
+import com.gomech.dto.AiRequestDTO;
+import com.gomech.dto.AiResponseDTO;
+import com.gomech.service.PythonAiService;
 
 @RestController
 @RequestMapping("/ai/chat")
 public class ChatController {
 
-    private final ChatClient chatClient;
+    private final PythonAiService pythonAiService;
 
-    public ChatController(ChatClient.Builder builder, VectorStore vectorStore) {
-        this.chatClient = builder
-                .defaultAdvisors(new QuestionAnswerAdvisor(vectorStore))
-                .build();
+    public ChatController(PythonAiService pythonAiService) {
+        this.pythonAiService = pythonAiService;
     }
 
     public static class ChatResponseDTO {
@@ -41,12 +39,16 @@ public class ChatController {
                         .body(new ChatResponseDTO(null, "Prompt não pode ser vazio"));
             }
 
-            String resposta = chatClient.prompt()
-                    .user(request.getPrompt() + " De acordo com os dados da loja, sejam eles .json ou .xls/.xlsx")
-                    .call()
-                    .content();
+            // Cria request para o Python AI Service - sempre usando IA forte com RAG
+            AiRequestDTO aiRequest = new AiRequestDTO(
+                request.getPrompt() + " De acordo com os dados da loja, sejam eles .json ou .xls/.xlsx",
+                false // chart = false por padrão no chat
+            );
 
-            return ResponseEntity.ok(new ChatResponseDTO(resposta, "success"));
+            // Usa sempre a IA aprimorada com RAG (enhanced)
+            AiResponseDTO aiResponse = pythonAiService.askEnhancedQuestion(aiRequest);
+
+            return ResponseEntity.ok(new ChatResponseDTO(aiResponse.getAnswer(), "success"));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
