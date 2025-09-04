@@ -1,13 +1,11 @@
 package com.gomech.dto;
 
 import com.gomech.model.ServiceOrderItemType;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
+@Data
 public class ServiceOrderItemCreateDTO {
     private String description;
     private ServiceOrderItemType itemType;

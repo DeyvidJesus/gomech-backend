@@ -12,7 +12,7 @@ import java.util.List;
 
 @Entity(name = "users")
 @Table(name = "users")
-@Getter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")

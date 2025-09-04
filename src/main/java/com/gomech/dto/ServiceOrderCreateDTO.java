@@ -1,14 +1,12 @@
 package com.gomech.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 public class ServiceOrderCreateDTO {
     private Long vehicleId;
     private Long clientId;

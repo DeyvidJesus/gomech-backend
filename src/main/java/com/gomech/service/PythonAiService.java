@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.util.Map;
 
 @Service
 public class PythonAiService {
@@ -175,4 +176,4 @@ public class PythonAiService {
             this.ai_type = "enhanced";
         }
     }
-} 
+}
