@@ -1,4 +1,4 @@
-package com.gomech.dto;
+package com.gomech.dto.Ai;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

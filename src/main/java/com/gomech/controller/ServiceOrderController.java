@@ -1,9 +1,16 @@
 package com.gomech.controller;
 
-import com.gomech.dto.*;
+import com.gomech.dto.ServiceOrder.ServiceOrderCreateDTO;
+import com.gomech.dto.ServiceOrder.ServiceOrderResponseDTO;
+import com.gomech.dto.ServiceOrder.ServiceOrderUpdateDTO;
+import com.gomech.dto.ServiceOrder.ServiceOrderItemCreateDTO;
+import com.gomech.dto.ServiceOrder.ServiceOrderItemResponseDTO;
+import com.gomech.dto.ServiceOrder.UpdateStatusDTO;
 import com.gomech.model.ServiceOrderStatus;
 import com.gomech.service.ServiceOrderService;
 import com.gomech.service.ServiceOrderItemService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +22,7 @@ import java.util.List;
 @RequestMapping("/service-orders")
 @CrossOrigin
 public class ServiceOrderController {
-
+    private static final Logger logger = LoggerFactory.getLogger(ServiceOrderController.class);
     @Autowired
     private ServiceOrderService serviceOrderService;
 
@@ -24,18 +31,14 @@ public class ServiceOrderController {
 
     @PostMapping
     public ResponseEntity<ServiceOrderResponseDTO> create(@RequestBody ServiceOrderCreateDTO dto) {
-        try {
-            ServiceOrderResponseDTO created = serviceOrderService.create(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        logger.info(dto.toString());
+        ServiceOrderResponseDTO created = serviceOrderService.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
     public ResponseEntity<List<ServiceOrderResponseDTO>> listAll() {
-        List<ServiceOrderResponseDTO> serviceOrders = serviceOrderService.listAll();
-        return ResponseEntity.ok(serviceOrders);
+        return ResponseEntity.ok(serviceOrderService.listAll());
     }
 
     @GetMapping("/{id}")
@@ -54,86 +57,51 @@ public class ServiceOrderController {
 
     @GetMapping("/status/{status}")
     public ResponseEntity<List<ServiceOrderResponseDTO>> getByStatus(@PathVariable ServiceOrderStatus status) {
-        List<ServiceOrderResponseDTO> serviceOrders = serviceOrderService.getByStatus(status);
-        return ResponseEntity.ok(serviceOrders);
-    }
-
-    @GetMapping("/client/{clientId}")
-    public ResponseEntity<List<ServiceOrderResponseDTO>> getByClientId(@PathVariable Long clientId) {
-        List<ServiceOrderResponseDTO> serviceOrders = serviceOrderService.getByClientId(clientId);
-        return ResponseEntity.ok(serviceOrders);
-    }
-
-    @GetMapping("/vehicle/{vehicleId}")
-    public ResponseEntity<List<ServiceOrderResponseDTO>> getByVehicleId(@PathVariable Long vehicleId) {
-        List<ServiceOrderResponseDTO> serviceOrders = serviceOrderService.getByVehicleId(vehicleId);
-        return ResponseEntity.ok(serviceOrders);
-    }
-
-    @GetMapping("/vehicle/{vehicleId}/history")
-    public ResponseEntity<List<ServiceOrderResponseDTO>> getVehicleHistory(@PathVariable Long vehicleId) {
-        List<ServiceOrderResponseDTO> history = serviceOrderService.getVehicleHistory(vehicleId);
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(serviceOrderService.getByStatus(status));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ServiceOrderResponseDTO> update(@PathVariable Long id, @RequestBody ServiceOrderUpdateDTO dto) {
-        try {
-            ServiceOrderResponseDTO updated = serviceOrderService.update(id, dto);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(serviceOrderService.update(id, dto));
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<ServiceOrderResponseDTO> updateStatus(@PathVariable Long id, @RequestBody ServiceOrderStatus status) {
-        try {
-            ServiceOrderResponseDTO updated = serviceOrderService.updateStatus(id, status);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<ServiceOrderResponseDTO> updateStatus(@PathVariable Long id, @RequestBody UpdateStatusDTO dto) {
+        return ResponseEntity.ok(serviceOrderService.updateStatus(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        try {
-            serviceOrderService.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        serviceOrderService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
-    // Endpoints para relatórios
     @GetMapping("/reports/overdue")
     public ResponseEntity<List<ServiceOrderResponseDTO>> getOverdueOrders() {
-        List<ServiceOrderResponseDTO> overdue = serviceOrderService.getOverdueOrders();
-        return ResponseEntity.ok(overdue);
+        return ResponseEntity.ok(serviceOrderService.getOverdueOrders());
     }
 
     @GetMapping("/reports/waiting-parts")
     public ResponseEntity<List<ServiceOrderResponseDTO>> getWaitingParts() {
-        List<ServiceOrderResponseDTO> waiting = serviceOrderService.getWaitingParts();
-        return ResponseEntity.ok(waiting);
+        return ResponseEntity.ok(serviceOrderService.getWaitingParts());
     }
 
     @GetMapping("/reports/waiting-approval")
     public ResponseEntity<List<ServiceOrderResponseDTO>> getWaitingApproval() {
-        List<ServiceOrderResponseDTO> waiting = serviceOrderService.getWaitingApproval();
-        return ResponseEntity.ok(waiting);
+        return ResponseEntity.ok(serviceOrderService.getWaitingApproval());
     }
 
-    // Endpoints para gerenciar itens da OS
     @PostMapping("/{serviceOrderId}/items")
-    public ResponseEntity<ServiceOrderItemResponseDTO> addItem(@PathVariable Long serviceOrderId, 
-                                                              @RequestBody ServiceOrderItemCreateDTO dto) {
+    public ResponseEntity<?> addItem(@PathVariable Long serviceOrderId, @RequestBody ServiceOrderItemCreateDTO dto) {
         try {
+            logger.info("=== ENDPOINT CHAMADO === ServiceOrderId: {}, DTO: {}", serviceOrderId, dto);
             ServiceOrderItemResponseDTO item = itemService.addItem(serviceOrderId, dto);
+            logger.info("=== ITEM CRIADO === {}", item);
             return ResponseEntity.status(HttpStatus.CREATED).body(item);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("=== ERRO AO ADICIONAR ITEM ===", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(java.util.Map.of("error", e.getMessage()));
         }
     }
 
@@ -144,8 +112,7 @@ public class ServiceOrderController {
     }
 
     @PutMapping("/items/{itemId}")
-    public ResponseEntity<ServiceOrderItemResponseDTO> updateItem(@PathVariable Long itemId, 
-                                                                 @RequestBody ServiceOrderItemCreateDTO dto) {
+    public ResponseEntity<ServiceOrderItemResponseDTO> updateItem(@PathVariable Long itemId, @RequestBody ServiceOrderItemCreateDTO dto) {
         try {
             ServiceOrderItemResponseDTO updated = itemService.updateItem(itemId, dto);
             return ResponseEntity.ok(updated);

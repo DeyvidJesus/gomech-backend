@@ -3,9 +3,9 @@ package com.gomech.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.gomech.dto.ChatRequestDTO;
-import com.gomech.dto.AiRequestDTO;
-import com.gomech.dto.AiResponseDTO;
+import com.gomech.dto.Ai.ChatRequestDTO;
+import com.gomech.dto.Ai.AiRequestDTO;
+import com.gomech.dto.Ai.AiResponseDTO;
 import com.gomech.service.PythonAiService;
 
 @RestController

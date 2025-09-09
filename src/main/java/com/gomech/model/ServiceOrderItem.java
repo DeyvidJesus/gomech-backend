@@ -2,20 +2,27 @@ package com.gomech.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"serviceOrder"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "service_order_items")
+@Table(name = "service_items")
 public class ServiceOrderItem {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,73 +43,39 @@ public class ServiceOrderItem {
     @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal unitPrice = BigDecimal.ZERO;
 
-    @Column(precision = 10, scale = 2, nullable = false)
-    private BigDecimal totalPrice = BigDecimal.ZERO;
+    @Column(precision = 10, scale = 2, nullable = false, 
+            columnDefinition = "numeric(10,2) generated always as (((quantity)::numeric * unit_price)) stored",
+            insertable = false, updatable = false)
+    private BigDecimal totalPrice;
 
-    // Campo para futuro controle de estoque
     @Column(length = 100)
     private String productCode;
 
-    // Campo para indicar se o item requer controle de estoque
+    @Column(name = "stock_product_id")
+    private Long stockProductId;
+
     @Column(nullable = false)
     private Boolean requiresStock = false;
 
-    // Campo para indicar se o estoque foi reservado (para futuro uso)
     @Column(nullable = false)
     private Boolean stockReserved = false;
-
-    // Campo para armazenar ID do produto no estoque (para futuro uso)
-    private Long stockProductId;
 
     @Column(columnDefinition = "TEXT")
     private String observations;
 
-    // Campo para indicar se o item foi entregue/aplicado
     @Column(nullable = false)
     private Boolean applied = false;
 
     @CreationTimestamp
-    @Column(name = "createdAt", updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updatedAt")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    @PreUpdate
-    public void calculateTotalPrice() {
-        if (unitPrice != null && quantity != null) {
-            this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
-        } else {
-            this.totalPrice = BigDecimal.ZERO;
-        }
-    }
+    // totalPrice é calculado automaticamente pelo banco de dados como campo generated
 
-    // Métodos de conveniência
-    public boolean isService() {
-        return this.itemType == ServiceOrderItemType.SERVICE;
-    }
-
-    public boolean isPart() {
-        return this.itemType == ServiceOrderItemType.PART;
-    }
-
-    public boolean isMaterial() {
-        return this.itemType == ServiceOrderItemType.MATERIAL;
-    }
-
-    public boolean isLabor() {
-        return this.itemType == ServiceOrderItemType.LABOR;
-    }
-
-    // Método para aplicar/entregar o item
-    public void apply() {
-        this.applied = true;
-    }
-
-    // Método para reverter aplicação
-    public void unapply() {
-        this.applied = false;
-    }
+    public void apply() { this.applied = true; }
+    public void unapply() { this.applied = false; }
 }

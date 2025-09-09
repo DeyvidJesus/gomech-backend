@@ -1,12 +1,15 @@
 package com.gomech.service;
 
-import com.gomech.dto.ServiceOrderItemCreateDTO;
-import com.gomech.dto.ServiceOrderItemResponseDTO;
+import com.gomech.controller.ServiceOrderController;
+import com.gomech.dto.ServiceOrder.ServiceOrderItemCreateDTO;
+import com.gomech.dto.ServiceOrder.ServiceOrderItemResponseDTO;
 import com.gomech.model.ServiceOrder;
 import com.gomech.model.ServiceOrderItem;
 import com.gomech.model.ServiceOrderItemType;
 import com.gomech.repository.ServiceOrderItemRepository;
 import com.gomech.repository.ServiceOrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +21,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class ServiceOrderItemService {
-    
+    private static final Logger logger = LoggerFactory.getLogger(ServiceOrderItemService.class);
+
     @Autowired
     private ServiceOrderItemRepository itemRepository;
     
@@ -28,18 +32,17 @@ public class ServiceOrderItemService {
     public ServiceOrderItemResponseDTO addItem(Long serviceOrderId, ServiceOrderItemCreateDTO dto) {
         ServiceOrder serviceOrder = serviceOrderRepository.findById(serviceOrderId)
             .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
+        logger.info("Service Order: {}", serviceOrder.toString());
+        logger.info("Service Order Item: {}", dto);
+        logger.info("Service Order ID: {}", serviceOrderId);
 
         ServiceOrderItem item = new ServiceOrderItem();
         item.setServiceOrder(serviceOrder);
-        item.setDescription(dto.getDescription());
-        item.setItemType(dto.getItemType());
-        item.setQuantity(dto.getQuantity());
-        item.setUnitPrice(dto.getUnitPrice());
-        item.setProductCode(dto.getProductCode());
-        item.setRequiresStock(dto.getRequiresStock());
-        item.setObservations(dto.getObservations());
+        ServiceOrderService.getServiceOrderItem(dto, item);
 
         ServiceOrderItem saved = itemRepository.save(item);
+        logger.info("Service Order Item Saved: {}", saved.toString());
+        logger.info("Service Order To Be Saved: {}", serviceOrder.toString());
         
         // Recalcular custos da OS
         serviceOrder.calculateTotalCost();
@@ -84,6 +87,9 @@ public class ServiceOrderItemService {
         if (dto.getProductCode() != null) {
             item.setProductCode(dto.getProductCode());
         }
+        if (dto.getStockProductId() != null) {
+            item.setStockProductId(dto.getStockProductId());
+        }
         if (dto.getRequiresStock() != null) {
             item.setRequiresStock(dto.getRequiresStock());
         }
@@ -119,6 +125,12 @@ public class ServiceOrderItemService {
         
         item.apply();
         ServiceOrderItem updated = itemRepository.save(item);
+        
+        // Recalcular custos da OS ao aplicar item
+        ServiceOrder serviceOrder = updated.getServiceOrder();
+        serviceOrder.calculateTotalCost();
+        serviceOrderRepository.save(serviceOrder);
+        
         return convertToResponseDTO(updated);
     }
 
@@ -128,6 +140,12 @@ public class ServiceOrderItemService {
         
         item.unapply();
         ServiceOrderItem updated = itemRepository.save(item);
+        
+        // Recalcular custos da OS ao desaplicar item
+        ServiceOrder serviceOrder = updated.getServiceOrder();
+        serviceOrder.calculateTotalCost();
+        serviceOrderRepository.save(serviceOrder);
+        
         return convertToResponseDTO(updated);
     }
 
@@ -173,6 +191,7 @@ public class ServiceOrderItemService {
         dto.setUnitPrice(item.getUnitPrice());
         dto.setTotalPrice(item.getTotalPrice());
         dto.setProductCode(item.getProductCode());
+        dto.setStockProductId(item.getStockProductId());
         dto.setRequiresStock(item.getRequiresStock());
         dto.setStockReserved(item.getStockReserved());
         dto.setApplied(item.getApplied());

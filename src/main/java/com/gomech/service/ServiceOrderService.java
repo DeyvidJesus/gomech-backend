@@ -1,6 +1,6 @@
 package com.gomech.service;
 
-import com.gomech.dto.*;
+import com.gomech.dto.ServiceOrder.*;
 import com.gomech.model.*;
 import com.gomech.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,29 +15,51 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class ServiceOrderService {
-    
+
     @Autowired
     private ServiceOrderRepository serviceOrderRepository;
-    
+
     @Autowired
     private ServiceOrderItemRepository serviceOrderItemRepository;
-    
+
     @Autowired
     private VehicleRepository vehicleRepository;
-    
+
     @Autowired
     private ClientRepository clientRepository;
 
     public ServiceOrderResponseDTO create(ServiceOrderCreateDTO dto) {
-        // Validar se veículo existe
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
-            .orElseThrow(() -> new RuntimeException("Veículo não encontrado"));
-        
-        // Validar se cliente existe
+                .orElseThrow(() -> new RuntimeException("Veículo não encontrado"));
         Client client = clientRepository.findById(dto.getClientId())
-            .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
 
-        // Criar ordem de serviço
+        ServiceOrder serviceOrder = getServiceOrder(dto, vehicle, client);
+
+        if (dto.getItems() != null && !dto.getItems().isEmpty()) {
+            for (ServiceOrderItemCreateDTO itemDto : dto.getItems()) {
+                ServiceOrderItem item = new ServiceOrderItem();
+                getServiceOrderItem(itemDto, item);
+                serviceOrder.addItem(item);
+            }
+        }
+
+        ServiceOrder saved = serviceOrderRepository.save(serviceOrder);
+        return convertToResponseDTO(saved);
+    }
+
+    static void getServiceOrderItem(ServiceOrderItemCreateDTO itemDto, ServiceOrderItem item) {
+        item.setDescription(itemDto.getDescription());
+        item.setItemType(itemDto.getItemType());
+        item.setQuantity(itemDto.getQuantity());
+        item.setUnitPrice(itemDto.getUnitPrice());
+        item.setProductCode(itemDto.getProductCode());
+        item.setStockProductId(itemDto.getStockProductId());
+        item.setRequiresStock(itemDto.getRequiresStock());
+        item.setObservations(itemDto.getObservations());
+    }
+
+    private static ServiceOrder getServiceOrder(ServiceOrderCreateDTO dto, Vehicle vehicle, Client client) {
         ServiceOrder serviceOrder = new ServiceOrder();
         serviceOrder.setVehicle(vehicle);
         serviceOrder.setClient(client);
@@ -48,24 +70,10 @@ public class ServiceOrderService {
         serviceOrder.setEstimatedCompletion(dto.getEstimatedCompletion());
         serviceOrder.setObservations(dto.getObservations());
 
-        // Criar itens se fornecidos
-        if (dto.getItems() != null && !dto.getItems().isEmpty()) {
-            for (ServiceOrderItemCreateDTO itemDto : dto.getItems()) {
-                ServiceOrderItem item = new ServiceOrderItem();
-                item.setDescription(itemDto.getDescription());
-                item.setItemType(itemDto.getItemType());
-                item.setQuantity(itemDto.getQuantity());
-                item.setUnitPrice(itemDto.getUnitPrice());
-                item.setProductCode(itemDto.getProductCode());
-                item.setRequiresStock(itemDto.getRequiresStock());
-                item.setObservations(itemDto.getObservations());
-                
-                serviceOrder.addItem(item);
-            }
-        }
-
-        ServiceOrder saved = serviceOrderRepository.save(serviceOrder);
-        return convertToResponseDTO(saved);
+        if (dto.getLaborCost() != null)   serviceOrder.setLaborCost(dto.getLaborCost());
+        if (dto.getPartsCost() != null)   serviceOrder.setPartsCost(dto.getPartsCost());
+        if (dto.getDiscount() != null)    serviceOrder.setDiscount(dto.getDiscount());
+        return serviceOrder;
     }
 
     public List<ServiceOrderResponseDTO> listAll() {
@@ -104,67 +112,40 @@ public class ServiceOrderService {
 
     public ServiceOrderResponseDTO update(Long id, ServiceOrderUpdateDTO dto) {
         ServiceOrder serviceOrder = serviceOrderRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
-        
-        // Atualizar campos
-        if (dto.getDescription() != null) {
-            serviceOrder.setDescription(dto.getDescription());
-        }
-        if (dto.getProblemDescription() != null) {
-            serviceOrder.setProblemDescription(dto.getProblemDescription());
-        }
-        if (dto.getDiagnosis() != null) {
-            serviceOrder.setDiagnosis(dto.getDiagnosis());
-        }
-        if (dto.getSolutionDescription() != null) {
-            serviceOrder.setSolutionDescription(dto.getSolutionDescription());
-        }
+                .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
+
+        if (dto.getDescription() != null) serviceOrder.setDescription(dto.getDescription());
+        if (dto.getProblemDescription() != null) serviceOrder.setProblemDescription(dto.getProblemDescription());
+        if (dto.getDiagnosis() != null) serviceOrder.setDiagnosis(dto.getDiagnosis());
+        if (dto.getSolutionDescription() != null) serviceOrder.setSolutionDescription(dto.getSolutionDescription());
         if (dto.getStatus() != null) {
             serviceOrder.setStatus(dto.getStatus());
-            
-            // Se foi concluída, registrar data de conclusão
-            if (dto.getStatus() == ServiceOrderStatus.COMPLETED) {
+            if (dto.getStatus() == ServiceOrderStatus.COMPLETED || dto.getStatus() == ServiceOrderStatus.DELIVERED) {
                 serviceOrder.setActualCompletion(LocalDateTime.now());
             }
         }
-        if (dto.getLaborCost() != null) {
-            serviceOrder.setLaborCost(dto.getLaborCost());
-        }
-        if (dto.getPartsCost() != null) {
-            serviceOrder.setPartsCost(dto.getPartsCost());
-        }
-        if (dto.getDiscount() != null) {
-            serviceOrder.setDiscount(dto.getDiscount());
-        }
-        if (dto.getEstimatedCompletion() != null) {
-            serviceOrder.setEstimatedCompletion(dto.getEstimatedCompletion());
-        }
-        if (dto.getObservations() != null) {
-            serviceOrder.setObservations(dto.getObservations());
-        }
-        if (dto.getTechnicianName() != null) {
-            serviceOrder.setTechnicianName(dto.getTechnicianName());
-        }
-        if (dto.getCurrentKilometers() != null) {
-            serviceOrder.setCurrentKilometers(dto.getCurrentKilometers());
-        }
+        if (dto.getLaborCost() != null) serviceOrder.setLaborCost(dto.getLaborCost());
+        if (dto.getPartsCost() != null) serviceOrder.setPartsCost(dto.getPartsCost());
+        if (dto.getDiscount() != null) serviceOrder.setDiscount(dto.getDiscount());
+        if (dto.getEstimatedCompletion() != null) serviceOrder.setEstimatedCompletion(dto.getEstimatedCompletion());
+        if (dto.getObservations() != null) serviceOrder.setObservations(dto.getObservations());
+        if (dto.getTechnicianName() != null) serviceOrder.setTechnicianName(dto.getTechnicianName());
+        if (dto.getCurrentKilometers() != null) serviceOrder.setCurrentKilometers(dto.getCurrentKilometers());
 
         serviceOrder.calculateTotalCost();
         ServiceOrder updated = serviceOrderRepository.save(serviceOrder);
         return convertToResponseDTO(updated);
     }
 
-    public ServiceOrderResponseDTO updateStatus(Long id, ServiceOrderStatus newStatus) {
+    public ServiceOrderResponseDTO updateStatus(Long id, UpdateStatusDTO dto) {
         ServiceOrder serviceOrder = serviceOrderRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
-        
-        serviceOrder.setStatus(newStatus);
-        
-        // Se foi concluída, registrar data de conclusão
-        if (newStatus == ServiceOrderStatus.COMPLETED) {
+                .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
+
+        serviceOrder.setStatus(dto.getStatus());
+        if (dto.getStatus() == ServiceOrderStatus.COMPLETED || dto.getStatus() == ServiceOrderStatus.DELIVERED) {
             serviceOrder.setActualCompletion(LocalDateTime.now());
         }
-        
+
         ServiceOrder updated = serviceOrderRepository.save(serviceOrder);
         return convertToResponseDTO(updated);
     }
@@ -176,7 +157,6 @@ public class ServiceOrderService {
         serviceOrderRepository.deleteById(id);
     }
 
-    // Métodos de relatório
     public List<ServiceOrderResponseDTO> getOverdueOrders() {
         return serviceOrderRepository.findOverdueOrders(LocalDateTime.now()).stream()
                 .map(this::convertToResponseDTO)
@@ -201,27 +181,24 @@ public class ServiceOrderService {
                 .collect(Collectors.toList());
     }
 
-    // Método para converter entidade para DTO
     private ServiceOrderResponseDTO convertToResponseDTO(ServiceOrder serviceOrder) {
         ServiceOrderResponseDTO dto = new ServiceOrderResponseDTO();
         dto.setId(serviceOrder.getId());
         dto.setOrderNumber(serviceOrder.getOrderNumber());
         dto.setVehicleId(serviceOrder.getVehicleId());
         dto.setClientId(serviceOrder.getClientId());
-        
-        // Dados do veículo
+
         if (serviceOrder.getVehicle() != null) {
             dto.setVehicleLicensePlate(serviceOrder.getVehicle().getLicensePlate());
             dto.setVehicleModel(serviceOrder.getVehicle().getModel());
             dto.setVehicleBrand(serviceOrder.getVehicle().getBrand());
         }
-        
-        // Dados do cliente
+
         if (serviceOrder.getClient() != null) {
             dto.setClientName(serviceOrder.getClient().getName());
             dto.setClientPhone(serviceOrder.getClient().getPhone());
         }
-        
+
         dto.setDescription(serviceOrder.getDescription());
         dto.setProblemDescription(serviceOrder.getProblemDescription());
         dto.setDiagnosis(serviceOrder.getDiagnosis());
@@ -231,7 +208,6 @@ public class ServiceOrderService {
         dto.setPartsCost(serviceOrder.getPartsCost());
         dto.setTotalCost(serviceOrder.getTotalCost());
         dto.setDiscount(serviceOrder.getDiscount());
-        dto.setFinalCost(serviceOrder.getFinalCost());
         dto.setEstimatedCompletion(serviceOrder.getEstimatedCompletion());
         dto.setActualCompletion(serviceOrder.getActualCompletion());
         dto.setObservations(serviceOrder.getObservations());
@@ -239,14 +215,13 @@ public class ServiceOrderService {
         dto.setCurrentKilometers(serviceOrder.getCurrentKilometers());
         dto.setCreatedAt(serviceOrder.getCreatedAt());
         dto.setUpdatedAt(serviceOrder.getUpdatedAt());
-        
-        // Converter itens
+
         if (serviceOrder.getItems() != null) {
             dto.setItems(serviceOrder.getItems().stream()
                     .map(this::convertItemToResponseDTO)
                     .collect(Collectors.toList()));
         }
-        
+
         return dto;
     }
 

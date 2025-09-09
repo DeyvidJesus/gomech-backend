@@ -1,5 +1,8 @@
 package com.gomech.service;
 
+import com.gomech.dto.Vehicles.VehicleCreateDTO;
+import com.gomech.dto.Vehicles.VehicleResponseDTO;
+import com.gomech.dto.Vehicles.VehicleUpdateDTO;
 import com.gomech.model.Client;
 import com.gomech.model.Vehicle;
 import com.gomech.repository.ClientRepository;
@@ -33,77 +36,77 @@ public class VehicleService {
     @Autowired
     private ClientRepository clientRepository;
 
-    public Vehicle save(Vehicle vehicle) {
-        // Se foi fornecido um clientId, buscar e associar o cliente
-        if (vehicle.getClientId() != null) {
-            Client client = clientRepository.findById(vehicle.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + vehicle.getClientId()));
-            vehicle.setClient(client);
-        }
-        return repository.save(vehicle);
+    public VehicleResponseDTO save(VehicleCreateDTO dto) {
+        Client client = clientRepository.findById(dto.clientId())
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+
+        Vehicle vehicle = new Vehicle();
+        vehicle.setClient(client);
+        vehicle.setBrand(dto.brand());
+        vehicle.setLicensePlate(dto.licensePlate());
+        vehicle.setModel(dto.model());
+        vehicle.setColor(dto.color());
+        vehicle.setChassisId(dto.chassisId());
+        vehicle.setKilometers(dto.kilometers());
+        vehicle.setObservations(dto.observations());
+        vehicle.setManufactureDate(dto.manufactureDate());
+
+        return VehicleResponseDTO.fromEntity(repository.save(vehicle));
     }
 
-    public List<Vehicle> listAll() {
-        List<Vehicle> vehicles = repository.findAll();
-        // Garantir que o clientId seja populado corretamente na resposta
-        vehicles.forEach(vehicle -> {
-            if (vehicle.getClient() != null) {
-                vehicle.setClientId(vehicle.getClient().getId());
-            }
-        });
-        return vehicles;
+    public List<VehicleResponseDTO> listAll() {
+        return repository.findAll().stream()
+                .map(VehicleResponseDTO::fromEntity)
+                .toList();
     }
 
-
-    public Optional<Vehicle> getById(Long id) {
-        Optional<Vehicle> vehicleOpt = repository.findById(id);
-        vehicleOpt.ifPresent(vehicle -> {
-            if (vehicle.getClient() != null) {
-                vehicle.setClientId(vehicle.getClient().getId());
-            }
-        });
-        return vehicleOpt;
+    public Optional<VehicleResponseDTO> getById(Long id) {
+        return repository.findById(id)
+                .map(VehicleResponseDTO::fromEntity);
     }
 
     public void delete(Long id) {
         repository.deleteById(id);
     }
 
-    public Vehicle update(Long id, Vehicle updatedVehicle) {
+    public VehicleResponseDTO update(Long id, VehicleUpdateDTO dto) {
         Vehicle vehicle = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-        vehicle.setLicensePlate(updatedVehicle.getLicensePlate());
-        vehicle.setBrand(updatedVehicle.getBrand());
-        vehicle.setModel(updatedVehicle.getModel());
-        vehicle.setColor(updatedVehicle.getColor());
-        vehicle.setManufactureDate(updatedVehicle.getManufactureDate());
-        vehicle.setObservations(updatedVehicle.getObservations());
-        vehicle.setKilometers(updatedVehicle.getKilometers());
-        vehicle.setChassisId(updatedVehicle.getChassisId());
-        
-        // Se foi fornecido um clientId, buscar e associar o cliente
-        if (updatedVehicle.getClientId() != null) {
-            Client client = clientRepository.findById(updatedVehicle.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + updatedVehicle.getClientId()));
+
+        vehicle.setLicensePlate(dto.licensePlate());
+        vehicle.setBrand(dto.brand());
+        vehicle.setModel(dto.model());
+        vehicle.setColor(dto.color());
+        vehicle.setManufactureDate(dto.manufactureDate());
+        vehicle.setObservations(dto.observations());
+        vehicle.setKilometers(dto.kilometers());
+        vehicle.setChassisId(dto.chassisId());
+
+        if (dto.clientId() != null) {
+            Client client = clientRepository.findById(dto.clientId())
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + dto.clientId()));
             vehicle.setClient(client);
         }
-        
-        return repository.save(vehicle);
+
+        return VehicleResponseDTO.fromEntity(repository.save(vehicle));
     }
 
-    public List<Vehicle> saveFromFile(MultipartFile file) {
+    public List<VehicleResponseDTO> saveFromFile(MultipartFile file) {
+        List<Vehicle> vehicles;
         String filename = file.getOriginalFilename();
-        if (filename == null) {
-            throw new RuntimeException("Arquivo sem nome");
-        }
+        if (filename == null) throw new RuntimeException("Arquivo sem nome");
 
         if (filename.endsWith(".csv") || filename.endsWith(".txt")) {
-            return saveFromDelimitedFile(file);
+            vehicles = saveFromDelimitedFile(file);
         } else if (filename.endsWith(".xls") || filename.endsWith(".xlsx")) {
-            return saveFromExcel(file);
+            vehicles = saveFromExcel(file);
         } else {
             throw new RuntimeException("Formato de arquivo não suportado");
         }
+
+        return vehicles.stream()
+                .map(VehicleResponseDTO::fromEntity)
+                .toList();
     }
 
     private List<Vehicle> saveFromDelimitedFile(MultipartFile file) {
@@ -172,7 +175,7 @@ public class VehicleService {
         String km = getter.apply("kilometers");
         if (km != null && !km.isEmpty()) {
             try {
-                vehicle.setKilometers(Float.parseFloat(km));
+                vehicle.setKilometers((int) Float.parseFloat(km));
             } catch (NumberFormatException ignored) {}
         }
         vehicle.setChassisId(getter.apply("chassisId"));

@@ -1,7 +1,10 @@
 package com.gomech.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -10,13 +13,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"items", "vehicle", "client"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "service_orders")
 public class ServiceOrder {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(unique = true, nullable = false, length = 50)
@@ -30,7 +37,6 @@ public class ServiceOrder {
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
-    // Campos para facilitar queries sem joins
     @Column(name = "vehicle_id", insertable = false, updatable = false)
     private Long vehicleId;
 
@@ -55,21 +61,18 @@ public class ServiceOrder {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal laborCost = BigDecimal.ZERO;
-    
+
     @Column(precision = 10, scale = 2)
     private BigDecimal partsCost = BigDecimal.ZERO;
-    
+
     @Column(precision = 10, scale = 2)
     private BigDecimal totalCost = BigDecimal.ZERO;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal discount = BigDecimal.ZERO;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal finalCost = BigDecimal.ZERO;
-
     private LocalDateTime estimatedCompletion;
-    
+
     private LocalDateTime actualCompletion;
 
     @Column(columnDefinition = "TEXT")
@@ -85,11 +88,11 @@ public class ServiceOrder {
     private List<ServiceOrderItem> items = new ArrayList<>();
 
     @CreationTimestamp
-    @Column(name = "createdAt", updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updatedAt")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     public ServiceOrder() {
@@ -97,26 +100,25 @@ public class ServiceOrder {
     }
 
     private void generateOrderNumber() {
-        // Gera número da OS com formato: OS-YYYYMMDD-HHMMSS
-        this.orderNumber = "OS-" + java.time.LocalDateTime.now()
+        this.orderNumber = "OS-" + LocalDateTime.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
     }
 
     public void calculateTotalCost() {
-        // Calcula o total dos itens
-        BigDecimal itemsTotal = items != null ? 
-            items.stream()
+        // Considera apenas itens aplicados para o cálculo
+        BigDecimal itemsTotal = items.stream()
+                .filter(item -> item.getApplied() != null && item.getApplied()) // Apenas itens aplicados
                 .map(ServiceOrderItem::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add) : BigDecimal.ZERO;
-        
-        // Soma mão de obra + peças + itens
-        this.totalCost = this.laborCost.add(this.partsCost).add(itemsTotal);
-        
-        // Aplica desconto
-        this.finalCost = this.totalCost.subtract(this.discount);
+                .filter(price -> price != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal safeLaborCost = this.laborCost != null ? this.laborCost : BigDecimal.ZERO;
+        BigDecimal safePartsCost = this.partsCost != null ? this.partsCost : BigDecimal.ZERO;
+        BigDecimal safeDiscount = this.discount != null ? this.discount : BigDecimal.ZERO;
+
+        this.totalCost = safeLaborCost.add(safePartsCost).add(itemsTotal);
     }
 
-    // Métodos de conveniência para gerenciar itens
     public void addItem(ServiceOrderItem item) {
         item.setServiceOrder(this);
         this.items.add(item);
@@ -127,22 +129,5 @@ public class ServiceOrder {
         this.items.remove(item);
         item.setServiceOrder(null);
         calculateTotalCost();
-    }
-
-    // Métodos para verificar status
-    public boolean isPending() {
-        return this.status == ServiceOrderStatus.PENDING;
-    }
-
-    public boolean isInProgress() {
-        return this.status == ServiceOrderStatus.IN_PROGRESS;
-    }
-
-    public boolean isCompleted() {
-        return this.status == ServiceOrderStatus.COMPLETED;
-    }
-
-    public boolean isCancelled() {
-        return this.status == ServiceOrderStatus.CANCELLED;
     }
 }
