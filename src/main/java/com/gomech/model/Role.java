@@ -1,8 +1,8 @@
 package com.gomech.model;
 
 public enum Role {
-    ADMIN("admin"),
-    USER("user");
+    ADMIN("ADMIN"),
+    USER("USER");
 
     private String role;
 

@@ -53,7 +53,6 @@ CREATE TABLE service_orders (
     parts_cost NUMBER(10,2) DEFAULT 0,
     total_cost NUMBER(10,2) DEFAULT 0,
     discount NUMBER(10,2) DEFAULT 0,
-    final_cost NUMBER(10,2) DEFAULT 0,
     estimated_completion TIMESTAMP,
     actual_completion TIMESTAMP,
     observations CLOB,

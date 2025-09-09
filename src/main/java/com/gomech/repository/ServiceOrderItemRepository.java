@@ -24,32 +24,25 @@ public interface ServiceOrderItemRepository extends JpaRepository<ServiceOrderIt
     
     List<ServiceOrderItem> findByApplied(Boolean applied);
     
-    // Buscar itens não aplicados de uma OS
     @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.serviceOrder.id = :serviceOrderId AND soi.applied = false")
     List<ServiceOrderItem> findPendingItemsByServiceOrder(@Param("serviceOrderId") Long serviceOrderId);
     
-    // Buscar itens aplicados de uma OS
     @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.serviceOrder.id = :serviceOrderId AND soi.applied = true")
     List<ServiceOrderItem> findAppliedItemsByServiceOrder(@Param("serviceOrderId") Long serviceOrderId);
     
-    // Buscar peças que requerem estoque
     @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.itemType = 'PART' AND soi.requiresStock = true")
     List<ServiceOrderItem> findPartsRequiringStock();
     
-    // Buscar itens com estoque reservado mas não aplicados
     @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.stockReserved = true AND soi.applied = false")
     List<ServiceOrderItem> findReservedNotAppliedItems();
     
-    // Buscar itens por tipo e OS
     @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.serviceOrder.id = :serviceOrderId AND soi.itemType = :itemType")
     List<ServiceOrderItem> findByServiceOrderAndType(@Param("serviceOrderId") Long serviceOrderId, 
                                                      @Param("itemType") ServiceOrderItemType itemType);
     
-    // Buscar os itens mais utilizados (para relatórios)
     @Query("SELECT soi.description, COUNT(soi) as quantidade FROM ServiceOrderItem soi GROUP BY soi.description ORDER BY quantidade DESC")
     List<Object[]> findMostUsedItems();
     
-    // Buscar itens por código de produto (para futuro controle de estoque)
     @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.productCode = :productCode AND soi.stockReserved = true")
     List<ServiceOrderItem> findReservedByProductCode(@Param("productCode") String productCode);
 }

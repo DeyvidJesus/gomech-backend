@@ -1,9 +1,9 @@
 package com.gomech.controller;
 
 import com.gomech.configuration.TokenService;
-import com.gomech.dto.AuthenticationDTO;
-import com.gomech.dto.LoginResponseDTO;
-import com.gomech.dto.RegisterDTO;
+import com.gomech.dto.Authentication.AuthenticationDTO;
+import com.gomech.dto.Authentication.LoginResponseDTO;
+import com.gomech.dto.Authentication.RegisterDTO;
 import com.gomech.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

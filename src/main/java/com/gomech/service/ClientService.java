@@ -1,5 +1,7 @@
 package com.gomech.service;
 
+import com.gomech.dto.Clients.ClientCreateDTO;
+import com.gomech.dto.Clients.ClientUpdateDTO;
 import com.gomech.model.Client;
 import com.gomech.repository.ClientRepository;
 import org.apache.commons.csv.CSVFormat;
@@ -19,11 +21,7 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.Optional;
-import java.util.ArrayList;
+import java.util.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
@@ -32,7 +30,16 @@ public class ClientService {
     @Autowired
     private ClientRepository repository;
 
-    public Client save(Client client) {
+    public Client save(ClientCreateDTO dto) {
+        Client client = new Client();
+        client.setName(dto.name());
+        client.setDocument(dto.document());
+        client.setPhone(dto.phone());
+        client.setEmail(dto.email());
+        client.setAddress(dto.address());
+        client.setBirthDate(dto.birthDate());
+        client.setObservations(dto.observations());
+
         return repository.save(client);
     }
 
@@ -48,13 +55,16 @@ public class ClientService {
         repository.deleteById(id);
     }
 
-    public Client update(Long id, Client updatedClient) {
+    public Client update(Long id, ClientUpdateDTO updatedClient) {
         Client client = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
-        client.setName(updatedClient.getName());
-        client.setDocument(updatedClient.getDocument());
-        client.setEmail(updatedClient.getEmail());
-        client.setPhone(updatedClient.getPhone());
+        client.setName(updatedClient.name());
+        client.setDocument(updatedClient.document());
+        client.setEmail(updatedClient.email());
+        client.setPhone(updatedClient.phone());
+        client.setAddress(updatedClient.address());
+        client.setBirthDate(updatedClient.birthDate());
+        client.setObservations(updatedClient.observations());
         return repository.save(client);
     }
 

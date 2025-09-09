@@ -1,6 +1,5 @@
 package com.gomech.model;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;

@@ -1,12 +1,11 @@
 package com.gomech.service;
 
-import com.gomech.dto.AiRequestDTO;
-import com.gomech.dto.AiResponseDTO;
+import com.gomech.dto.Ai.AiRequestDTO;
+import com.gomech.dto.Ai.AiResponseDTO;
 import com.gomech.controller.FileIngestionController;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
 import java.util.Map;
