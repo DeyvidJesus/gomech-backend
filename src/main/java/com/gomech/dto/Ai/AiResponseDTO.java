@@ -1,7 +1,11 @@
 package com.gomech.dto.Ai;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 public class AiResponseDTO {
     
     @JsonProperty("answer")
@@ -9,27 +13,16 @@ public class AiResponseDTO {
     
     @JsonProperty("chart")
     private String chart;
+
+    @JsonProperty("threadId")
+    private String threadId;
     
     public AiResponseDTO() {}
     
-    public AiResponseDTO(String answer, String chart) {
+    public AiResponseDTO(String answer, String chart, String threadId) {
         this.answer = answer;
         this.chart = chart;
+        this.threadId = threadId;
     }
-    
-    public String getAnswer() {
-        return answer;
-    }
-    
-    public void setAnswer(String answer) {
-        this.answer = answer;
-    }
-    
-    public String getChart() {
-        return chart;
-    }
-    
-    public void setChart(String chart) {
-        this.chart = chart;
-    }
-} 
+
+}

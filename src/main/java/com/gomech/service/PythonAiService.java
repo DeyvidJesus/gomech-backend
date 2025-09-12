@@ -2,7 +2,8 @@ package com.gomech.service;
 
 import com.gomech.dto.Ai.AiRequestDTO;
 import com.gomech.dto.Ai.AiResponseDTO;
-import com.gomech.controller.FileIngestionController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -12,57 +13,53 @@ import java.util.Map;
 
 @Service
 public class PythonAiService {
-
     private final WebClient webClient;
     private final String pythonServiceUrl;
 
-    public PythonAiService(WebClient.Builder webClientBuilder,
-                          @Value("${gomech.ai.python-service.url:http://localhost:5060}") String pythonServiceUrl) {
-        this.pythonServiceUrl = pythonServiceUrl;
+    public PythonAiService(WebClient.Builder webClientBuilder) {
+        this.pythonServiceUrl = "http://localhost:5060";
         this.webClient = webClientBuilder
                 .baseUrl(pythonServiceUrl)
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024)) // 20MB para gráficos grandes
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024))
                 .build();
     }
 
     /**
-     * Faz uma pergunta ao serviço Python usando IA forte com RAG
+     * Faz uma pergunta ao serviço Python usando o endpoint /chat real
      * @param request Request com pergunta e configurações
-     * @return Resposta da IA processada no Python com RAG
+     * @return Resposta da IA processada no Python
      */
     public AiResponseDTO askQuestion(AiRequestDTO request) {
-        return askEnhancedQuestion(request);
-    }
-
-
-    /**
-     * Faz pergunta usando IA aprimorada com RAG (sempre enhanced)
-     */
-    public AiResponseDTO askEnhancedQuestion(AiRequestDTO request) {
         try {
-            // Usa construtor simplificado que sempre define enhanced
-            PythonAiRequest pythonRequest = new PythonAiRequest(
+            PythonChatRequest pythonRequest = new PythonChatRequest(
                 request.getQuestion(),
-                request.getChart()
+                    request.getThreadId(),
+                    request.getUserId()
             );
             
-            // Usa endpoint enhanced diretamente
-            return webClient.post()
-                    .uri("/ask/enhanced")
+            PythonChatResponse pythonResponse = webClient.post()
+                    .uri("/chat")
                     .bodyValue(pythonRequest)
                     .retrieve()
-                    .bodyToMono(AiResponseDTO.class)
+                    .bodyToMono(PythonChatResponse.class)
                     .timeout(Duration.ofMinutes(3))
                     .block();
+            
+            if (pythonResponse == null) {
+                throw new NullPointerException("Python chat response is null");
+            }
+
+            return new AiResponseDTO(
+                pythonResponse.reply,
+                pythonResponse.image_base64,
+                    pythonResponse.thread_id
+            );
                     
         } catch (Exception e) {
-            throw new RuntimeException("Erro na IA com RAG: " + e.getMessage(), e);
+            throw new RuntimeException("Erro na comunicação com IA: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Verifica se o serviço Python está disponível
-     */
     public boolean isServiceAvailable() {
         try {
             String response = webClient.get()
@@ -71,7 +68,7 @@ public class PythonAiService {
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(5))
                     .block();
-                    
+
             return response != null && response.contains("healthy");
             
         } catch (Exception e) {
@@ -79,13 +76,10 @@ public class PythonAiService {
         }
     }
 
-    /**
-     * Obtém informações detalhadas sobre o status do serviço Python
-     */
     public Object getDetailedStatus() {
         try {
             return webClient.get()
-                    .uri("/")
+                    .uri("/status")
                     .retrieve()
                     .bodyToMono(Object.class)
                     .timeout(Duration.ofSeconds(10))
@@ -96,83 +90,27 @@ public class PythonAiService {
                 public final String status = "error";
                 public final String message = "Não foi possível conectar com o Python AI Service";
                 public final String error = e.getMessage();
+                public final String pythonServiceUrl = PythonAiService.this.pythonServiceUrl;
             };
         }
     }
 
-    /**
-     * Envia dados para ingestão no Python AI Service
-     */
-    public FileIngestionController.IngestionResponse ingestData(FileIngestionController.IngestionRequest request) {
-        try {
-            return webClient.post()
-                    .uri("/ingest")
-                    .bodyValue(request)
-                    .retrieve()
-                    .bodyToMono(FileIngestionController.IngestionResponse.class)
-                    .timeout(Duration.ofMinutes(5))
-                    .block();
-                    
-        } catch (Exception e) {
-            throw new RuntimeException("Erro na ingestão de dados: " + e.getMessage(), e);
+    private static class PythonChatRequest {
+        public String message;
+        public String thread_id;
+        public Long user_id;
+
+        public PythonChatRequest(String message, String threadId, Long userId) {
+            this.message = message;
+            this.thread_id = threadId;
+            this.user_id = userId;
         }
     }
 
-    /**
-     * Limpa o vector store
-     */
-    public boolean clearVectorStore() {
-        try {
-            Map<String, String> response = webClient.post()
-                    .uri("/ingest/clear")
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .timeout(Duration.ofMinutes(2))
-                    .block();
-                    
-            return response != null && "success".equals(response.get("status"));
-            
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao limpar vector store: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Obtém status da ingestão
-     */
-    public Map<String, Object> getIngestionStatus() {
-        try {
-            return webClient.get()
-                    .uri("/ingest/status")
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .timeout(Duration.ofSeconds(10))
-                    .block();
-                    
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao obter status de ingestão: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Classe interna para request ao serviço Python
-     */
-    private static class PythonAiRequest {
-        public String question;
-        public Boolean chart;
-        public String ai_type;
-
-        public PythonAiRequest(String question, Boolean chart, String aiType) {
-            this.question = question;
-            this.chart = chart != null ? chart : false;
-            this.ai_type = aiType != null ? aiType : "enhanced";
-        }
-        
-        // Construtor simplificado que sempre usa enhanced
-        public PythonAiRequest(String question, Boolean chart) {
-            this.question = question;
-            this.chart = chart != null ? chart : false;
-            this.ai_type = "enhanced";
-        }
+    private static class PythonChatResponse {
+        public String reply;
+        public String thread_id;
+        public String image_base64;
+        public String image_mime;
     }
 }
