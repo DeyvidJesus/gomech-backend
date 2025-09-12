@@ -1,34 +1,34 @@
 package com.gomech.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import com.gomech.dto.Ai.ChatResponseDTO;
+import com.gomech.model.Conversation;
+import com.gomech.model.User;
+import com.gomech.repository.ConversationRepository;
+import com.gomech.repository.UserRepository;
 import com.gomech.dto.Ai.ChatRequestDTO;
 import com.gomech.dto.Ai.AiRequestDTO;
 import com.gomech.dto.Ai.AiResponseDTO;
 import com.gomech.service.PythonAiService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/ai/chat")
 public class ChatController {
 
     private final PythonAiService pythonAiService;
+    private final ConversationRepository conversationRepository;
+    private final UserRepository userRepository;
 
-    public ChatController(PythonAiService pythonAiService) {
+    public ChatController(PythonAiService pythonAiService,
+                          ConversationRepository conversationRepository,
+                          UserRepository userRepository) {
         this.pythonAiService = pythonAiService;
-    }
-
-    public static class ChatResponseDTO {
-        private String content;
-        private String status;
-
-        public ChatResponseDTO(String content, String status) {
-            this.content = content;
-            this.status = status;
-        }
-
-        public String getContent() { return content; }
-        public String getStatus() { return status; }
+        this.conversationRepository = conversationRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -36,38 +36,57 @@ public class ChatController {
         try {
             if (request.getPrompt() == null || request.getPrompt().isBlank()) {
                 return ResponseEntity.badRequest()
-                        .body(new ChatResponseDTO(null, "Prompt não pode ser vazio"));
+                        .body(new ChatResponseDTO(null, "Prompt não pode ser vazio", null, null));
             }
 
-            // Cria request para o Python AI Service - sempre usando IA forte com RAG
+            User user = userRepository.findById(String.valueOf(request.getUserId()))
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+            String existingThreadId = conversationRepository.findThreadIdByUserId(user.getId())
+                    .orElse(null);
+
             AiRequestDTO aiRequest = new AiRequestDTO(
-                request.getPrompt() + " De acordo com os dados da loja, sejam eles .json ou .xls/.xlsx",
-                false // chart = false por padrão no chat
+                    request.getPrompt(),
+                    false,
+                    existingThreadId,
+                    request.getUserId()
             );
 
-            // Usa sempre a IA aprimorada com RAG (enhanced)
-            AiResponseDTO aiResponse = pythonAiService.askEnhancedQuestion(aiRequest);
+            AiResponseDTO aiResponse = pythonAiService.askQuestion(aiRequest);
 
-            return ResponseEntity.ok(new ChatResponseDTO(aiResponse.getAnswer(), "success"));
+            if (existingThreadId == null && aiResponse.getThreadId() != null) {
+                conversationRepository.save(new Conversation(user, aiResponse.getThreadId()));
+            }
+
+            return ResponseEntity.ok(
+                    new ChatResponseDTO(aiResponse.getAnswer(), "success", aiResponse.getThreadId(), aiResponse.getChart())
+            );
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ChatResponseDTO(null, "Erro ao processar o prompt: " + e.getMessage()));
+                    .body(new ChatResponseDTO(null, "Erro ao processar o prompt: " + e.getMessage(), null, null));
         }
     }
 
     @GetMapping("/status")
     public ResponseEntity<Object> getAiServiceStatus() {
-        boolean serviceAvailable = pythonAiService.isServiceAvailable();
-        
-        return ResponseEntity.ok(new Object() {
-            public final boolean pythonAiServiceAvailable = serviceAvailable;
-            public final boolean standardAiAvailable = serviceAvailable;
-            public final boolean enhancedAiAvailable = serviceAvailable;
-            public final String status = serviceAvailable ? "available" : "unavailable";
-            public final String message = serviceAvailable ? 
-                "Python AI Service está funcionando - Ambos os tipos de IA disponíveis" : 
-                "Python AI Service não está disponível";
-        });
+        try {
+            Object detailedStatus = pythonAiService.getDetailedStatus();
+
+            return ResponseEntity.ok(new Object() {
+                public final Object pythonServiceStatus = detailedStatus;
+                public final boolean serviceAvailable = pythonAiService.isServiceAvailable();
+                public final String backendStatus = "operational";
+                public final String message = "Status obtido do Python AI Service";
+            });
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(new Object() {
+                        public final boolean serviceAvailable = false;
+                        public final String backendStatus = "error";
+                        public final String message = "Erro ao obter status: " + e.getMessage();
+                    });
+        }
     }
 }
