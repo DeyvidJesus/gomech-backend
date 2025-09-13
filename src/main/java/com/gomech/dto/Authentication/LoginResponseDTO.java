@@ -1,4 +1,4 @@
 package com.gomech.dto.Authentication;
 
-public record LoginResponseDTO(String token, String email, String name, String role) {
+public record LoginResponseDTO(String token, String email, String name, String role, Long id) {
 }
