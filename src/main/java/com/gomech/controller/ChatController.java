@@ -36,7 +36,11 @@ public class ChatController {
         try {
             if (request.getPrompt() == null || request.getPrompt().isBlank()) {
                 return ResponseEntity.badRequest()
+<<<<<<< HEAD
                         .body(new ChatResponseDTO(null, "Prompt não pode ser vazio", null, null, null));
+=======
+                        .body(new ChatResponseDTO(null, "Prompt não pode ser vazio", null, null));
+>>>>>>> 16690f57f3ffa06c233aefd0539beaa93b02f143
             }
 
             User user = userRepository.findById(String.valueOf(request.getUserId()))
@@ -59,12 +63,20 @@ public class ChatController {
             }
 
             return ResponseEntity.ok(
+<<<<<<< HEAD
                     new ChatResponseDTO(aiResponse.getAnswer(), "success", aiResponse.getThreadId(), aiResponse.getChart(), aiResponse.getVideos())
+=======
+                    new ChatResponseDTO(aiResponse.getAnswer(), "success", aiResponse.getThreadId(), aiResponse.getChart())
+>>>>>>> 16690f57f3ffa06c233aefd0539beaa93b02f143
             );
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+<<<<<<< HEAD
                     .body(new ChatResponseDTO(null, "Erro ao processar o prompt: " + e.getMessage(), null, null, null));
+=======
+                    .body(new ChatResponseDTO(null, "Erro ao processar o prompt: " + e.getMessage(), null, null));
+>>>>>>> 16690f57f3ffa06c233aefd0539beaa93b02f143
         }
     }
 
