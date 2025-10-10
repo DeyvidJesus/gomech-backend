@@ -2,18 +2,11 @@ package com.gomech.service;
 
 import com.gomech.dto.Ai.AiRequestDTO;
 import com.gomech.dto.Ai.AiResponseDTO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
-<<<<<<< HEAD
 import java.util.List;
-=======
->>>>>>> 16690f57f3ffa06c233aefd0539beaa93b02f143
-import java.util.Map;
 
 @Service
 public class PythonAiService {
@@ -21,12 +14,8 @@ public class PythonAiService {
     private final String pythonServiceUrl;
 
     public PythonAiService(WebClient.Builder webClientBuilder) {
-<<<<<<< HEAD
         // this.pythonServiceUrl = "https://gomech-ai-service.onrender.com";
         this.pythonServiceUrl = "http://localhost:8000";
-=======
-        this.pythonServiceUrl = "https://gomech-ai-service.onrender.com";
->>>>>>> 16690f57f3ffa06c233aefd0539beaa93b02f143
         this.webClient = webClientBuilder
                 .baseUrl(pythonServiceUrl)
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024))
@@ -61,12 +50,8 @@ public class PythonAiService {
             return new AiResponseDTO(
                 pythonResponse.reply,
                 pythonResponse.image_base64,
-<<<<<<< HEAD
-                    pythonResponse.thread_id,
-                    pythonResponse.videos
-=======
-                    pythonResponse.thread_id
->>>>>>> 16690f57f3ffa06c233aefd0539beaa93b02f143
+                pythonResponse.thread_id,
+                pythonResponse.videos
             );
                     
         } catch (Exception e) {
@@ -126,10 +111,7 @@ public class PythonAiService {
         public String thread_id;
         public String image_base64;
         public String image_mime;
-<<<<<<< HEAD
         public String chart;
         public List<Object> videos;
-=======
->>>>>>> 16690f57f3ffa06c233aefd0539beaa93b02f143
     }
 }
