@@ -1,0 +1,37 @@
+name: Deploy GoMech Backend
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências e build do JAR
+        run: mvn clean package -DskipTests
+
+      - name: Copiar arquivos para o VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          source: "target/Gomech-0.0.1-SNAPSHOT.jar"
+          target: "/opt/gomech/gomech-backend/Gomech-0.0.1-SNAPSHOT.jar"
+
+      - name: Reiniciar containers no VPS
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            cd /opt/gomech
+            docker compose down
+            docker compose up -d --build
