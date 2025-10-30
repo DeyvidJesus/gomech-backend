@@ -13,6 +13,13 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+
       - name: Instalar dependências e build do JAR
         run: mvn clean package -DskipTests
 
