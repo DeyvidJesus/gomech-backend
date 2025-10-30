@@ -30,7 +30,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           source: "target/Gomech-0.0.1-SNAPSHOT.jar"
-          target: "/opt/gomech/gomech-backend/Gomech-0.0.1-SNAPSHOT.jar"
+          target: "/opt/gomech/gomech-backend/"
+          overwrite: true
 
       - name: Reiniciar containers no VPS
         uses: appleboy/ssh-action@v0.1.10
