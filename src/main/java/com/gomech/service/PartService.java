@@ -1,11 +1,16 @@
 package com.gomech.service;
 
 import com.gomech.domain.Part;
+import com.gomech.dto.Parts.PartCreateDTO;
+import com.gomech.dto.Parts.PartMapper;
+import com.gomech.dto.Parts.PartResponseDTO;
+import com.gomech.dto.Parts.PartUpdateDTO;
 import com.gomech.repository.PartRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -17,33 +22,37 @@ public class PartService {
         this.partRepository = partRepository;
     }
 
-    public Part register(Part part) {
-        return partRepository.save(part);
+    public PartResponseDTO register(PartCreateDTO dto) {
+        Part part = PartMapper.toEntity(dto);
+        return PartResponseDTO.fromEntity(partRepository.save(part));
     }
 
-    public Part update(Long id, Part updates) {
+    public PartResponseDTO update(Long id, PartUpdateDTO updates) {
         Part existing = partRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Peça não encontrada"));
 
-        if (updates.getName() != null) existing.setName(updates.getName());
-        if (updates.getSku() != null) existing.setSku(updates.getSku());
-        if (updates.getManufacturer() != null) existing.setManufacturer(updates.getManufacturer());
-        if (updates.getDescription() != null) existing.setDescription(updates.getDescription());
-        if (updates.getUnitCost() != null) existing.setUnitCost(updates.getUnitCost());
-        if (updates.getUnitPrice() != null) existing.setUnitPrice(updates.getUnitPrice());
-        if (updates.getActive() != null) existing.setActive(updates.getActive());
+        PartMapper.updateEntity(existing, updates);
 
-        return partRepository.save(existing);
+        return PartResponseDTO.fromEntity(partRepository.save(existing));
     }
 
     @Transactional(readOnly = true)
-    public Part getById(Long id) {
+    public Optional<PartResponseDTO> getById(Long id) {
         return partRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Peça não encontrada"));
+                .map(PartResponseDTO::fromEntity);
     }
 
     @Transactional(readOnly = true)
-    public List<Part> listAll() {
-        return partRepository.findAll();
+    public List<PartResponseDTO> listAll() {
+        return partRepository.findAll().stream()
+                .map(PartResponseDTO::fromEntity)
+                .toList();
+    }
+
+    public void delete(Long id) {
+        if (!partRepository.existsById(id)) {
+            throw new IllegalArgumentException("Peça não encontrada");
+        }
+        partRepository.deleteById(id);
     }
 }

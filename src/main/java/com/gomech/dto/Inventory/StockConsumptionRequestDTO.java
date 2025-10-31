@@ -1,0 +1,11 @@
+package com.gomech.dto.Inventory;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+public record StockConsumptionRequestDTO(
+        @NotNull Long serviceOrderItemId,
+        @NotNull @Min(1) Integer quantity,
+        String notes
+) {
+}
