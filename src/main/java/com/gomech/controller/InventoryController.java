@@ -1,5 +1,6 @@
 package com.gomech.controller;
 
+import com.gomech.dto.Inventory.CriticalPartReportDTO;
 import com.gomech.dto.Inventory.InventoryEntryRequestDTO;
 import com.gomech.dto.Inventory.InventoryItemCreateDTO;
 import com.gomech.dto.Inventory.InventoryItemResponseDTO;
@@ -7,11 +8,14 @@ import com.gomech.dto.Inventory.InventoryItemUpdateDTO;
 import com.gomech.dto.Inventory.InventoryMovementResponseDTO;
 import com.gomech.dto.Inventory.InventoryRecommendationDTO;
 import com.gomech.dto.Inventory.InventoryRecommendationRequestDTO;
+import com.gomech.dto.Inventory.PartAvailabilityDTO;
+import com.gomech.dto.Inventory.PartConsumptionStats;
 import com.gomech.dto.Inventory.StockCancellationRequestDTO;
 import com.gomech.dto.Inventory.StockConsumptionRequestDTO;
 import com.gomech.dto.Inventory.StockReservationRequestDTO;
 import com.gomech.dto.Inventory.StockReturnRequestDTO;
 import com.gomech.service.InventoryRecommendationService;
+import com.gomech.service.InventoryReportService;
 import com.gomech.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,11 +36,14 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
     private final InventoryRecommendationService inventoryRecommendationService;
+    private final InventoryReportService inventoryReportService;
 
     public InventoryController(InventoryService inventoryService,
-                               InventoryRecommendationService inventoryRecommendationService) {
+                               InventoryRecommendationService inventoryRecommendationService,
+                               InventoryReportService inventoryReportService) {
         this.inventoryService = inventoryService;
         this.inventoryRecommendationService = inventoryRecommendationService;
+        this.inventoryReportService = inventoryReportService;
     }
 
     @Operation(summary = "Lista os itens de estoque cadastrados")
@@ -160,6 +167,46 @@ public class InventoryController {
     @GetMapping("/recommendations/pipelines")
     public ResponseEntity<List<String>> listRecommendationPipelines() {
         return ResponseEntity.ok(inventoryRecommendationService.listAvailablePipelines());
+    }
+
+    @Operation(summary = "Lista peças com estoque crítico, agrupadas por modelo de veículo")
+    @GetMapping("/reports/critical-parts")
+    public ResponseEntity<List<CriticalPartReportDTO>> listCriticalParts(@RequestParam(required = false) String vehicleModel) {
+        return ResponseEntity.ok(inventoryReportService.listCriticalParts(vehicleModel));
+    }
+
+    @Operation(summary = "Recupera a disponibilidade agregada de uma peça específica")
+    @GetMapping("/availability/parts/{partId}")
+    public ResponseEntity<PartAvailabilityDTO> getPartAvailability(@PathVariable Long partId) {
+        try {
+            return ResponseEntity.ok(inventoryReportService.getAvailabilityForPart(partId));
+        } catch (RuntimeException ex) {
+            throw translateException(ex);
+        }
+    }
+
+    @Operation(summary = "Lista disponibilidade de peças relacionada a um veículo")
+    @GetMapping("/availability/vehicles/{vehicleId}")
+    public ResponseEntity<List<PartAvailabilityDTO>> getVehicleAvailability(@PathVariable Long vehicleId) {
+        return ResponseEntity.ok(inventoryReportService.listAvailabilityForVehicle(vehicleId));
+    }
+
+    @Operation(summary = "Lista disponibilidade de peças utilizada pelos veículos de um cliente")
+    @GetMapping("/availability/clients/{clientId}")
+    public ResponseEntity<List<PartAvailabilityDTO>> getClientAvailability(@PathVariable Long clientId) {
+        return ResponseEntity.ok(inventoryReportService.listAvailabilityForClient(clientId));
+    }
+
+    @Operation(summary = "Histórico de consumo de peças por veículo")
+    @GetMapping("/history/vehicles/{vehicleId}")
+    public ResponseEntity<List<PartConsumptionStats>> getVehicleHistory(@PathVariable Long vehicleId) {
+        return ResponseEntity.ok(inventoryReportService.getVehicleConsumptionHistory(vehicleId));
+    }
+
+    @Operation(summary = "Histórico de consumo de peças por cliente")
+    @GetMapping("/history/clients/{clientId}")
+    public ResponseEntity<List<PartConsumptionStats>> getClientHistory(@PathVariable Long clientId) {
+        return ResponseEntity.ok(inventoryReportService.getClientConsumptionHistory(clientId));
     }
 
     private ResponseStatusException translateException(RuntimeException ex) {

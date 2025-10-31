@@ -3,11 +3,14 @@ package com.gomech.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gomech.configuration.SecurityConfig;
 import com.gomech.configuration.SecurityFilter;
+import com.gomech.dto.Inventory.CriticalPartReportDTO;
 import com.gomech.dto.Inventory.InventoryEntryRequestDTO;
 import com.gomech.dto.Inventory.InventoryItemCreateDTO;
 import com.gomech.dto.Inventory.InventoryItemResponseDTO;
 import com.gomech.dto.Inventory.InventoryMovementResponseDTO;
 import com.gomech.dto.Inventory.InventoryRecommendationDTO;
+import com.gomech.dto.Inventory.PartAvailabilityDTO;
+import com.gomech.dto.Inventory.PartConsumptionStats;
 import com.gomech.dto.Inventory.StockReservationRequestDTO;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import com.gomech.service.InventoryRecommendationService;
+import com.gomech.service.InventoryReportService;
 import com.gomech.service.InventoryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +57,9 @@ class InventoryControllerTest {
 
     @MockBean
     private InventoryRecommendationService inventoryRecommendationService;
+
+    @MockBean
+    private InventoryReportService inventoryReportService;
 
     @MockBean
     private SecurityFilter securityFilter;
@@ -163,5 +170,77 @@ class InventoryControllerTest {
         mockMvc.perform(get("/inventory/recommendations/pipelines"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0]").value("inventory-recommendation"));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldExposeCriticalPartsReport() throws Exception {
+        CriticalPartReportDTO report = new CriticalPartReportDTO(1L, "Filtro", "FLT-001", "Sedan",
+                10L, 8L, 5L, 2L, 42L, LocalDateTime.now());
+        when(inventoryReportService.listCriticalParts(null)).thenReturn(List.of(report));
+
+        mockMvc.perform(get("/inventory/reports/critical-parts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].partSku").value("FLT-001"));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldReturnPartAvailability() throws Exception {
+        PartAvailabilityDTO availability = new PartAvailabilityDTO(2L, "Pastilha", "PST-010",
+                5L, 2L, 3L, 3L, LocalDateTime.now());
+        when(inventoryReportService.getAvailabilityForPart(2L)).thenReturn(availability);
+
+        mockMvc.perform(get("/inventory/availability/parts/{partId}", 2L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.availableQuantity").value(3));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldListVehicleAvailability() throws Exception {
+        PartAvailabilityDTO availability = new PartAvailabilityDTO(2L, "Pastilha", "PST-010",
+                5L, 1L, 2L, 4L, LocalDateTime.now());
+        when(inventoryReportService.listAvailabilityForVehicle(9L)).thenReturn(List.of(availability));
+
+        mockMvc.perform(get("/inventory/availability/vehicles/{vehicleId}", 9L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].partName").value("Pastilha"));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldListClientAvailability() throws Exception {
+        PartAvailabilityDTO availability = new PartAvailabilityDTO(2L, "Pastilha", "PST-010",
+                5L, 1L, 2L, 4L, LocalDateTime.now());
+        when(inventoryReportService.listAvailabilityForClient(11L)).thenReturn(List.of(availability));
+
+        mockMvc.perform(get("/inventory/availability/clients/{clientId}", 11L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].availableQuantity").value(4));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldReturnVehicleHistory() throws Exception {
+        PartConsumptionStats stats = new PartConsumptionStats(2L, "Filtro", "FLT-001",
+                8L, 3L, 2L, LocalDateTime.now());
+        when(inventoryReportService.getVehicleConsumptionHistory(7L)).thenReturn(List.of(stats));
+
+        mockMvc.perform(get("/inventory/history/vehicles/{vehicleId}", 7L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].totalQuantity").value(8));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldReturnClientHistory() throws Exception {
+        PartConsumptionStats stats = new PartConsumptionStats(2L, "Filtro", "FLT-001",
+                8L, 3L, 2L, LocalDateTime.now());
+        when(inventoryReportService.getClientConsumptionHistory(15L)).thenReturn(List.of(stats));
+
+        mockMvc.perform(get("/inventory/history/clients/{clientId}", 15L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].distinctVehicles").value(2));
     }
 }

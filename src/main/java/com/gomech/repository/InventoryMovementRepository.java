@@ -2,9 +2,11 @@ package com.gomech.repository;
 
 import com.gomech.domain.InventoryMovement;
 import com.gomech.dto.Inventory.InventoryConsumptionFeatureDTO;
+import com.gomech.dto.Inventory.CriticalPartMovementProjection;
 import com.gomech.dto.Inventory.PartConsumptionStats;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -158,4 +160,36 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             GROUP BY m.part.id, m.part.name, m.part.sku
             """)
     List<PartConsumptionStats> findConsumptionStatsByServiceOrder(Long serviceOrderId);
+
+    @Query("""
+            SELECT new com.gomech.dto.Inventory.PartConsumptionStats(
+                m.part.id,
+                m.part.name,
+                m.part.sku,
+                SUM(m.quantity),
+                COUNT(DISTINCT m.serviceOrder.id),
+                COUNT(DISTINCT m.vehicle.id),
+                MAX(m.movementDate)
+            )
+            FROM InventoryMovement m
+            JOIN m.serviceOrder so
+            WHERE m.movementType = com.gomech.domain.InventoryMovementType.OUT
+              AND so.client.id = :clientId
+            GROUP BY m.part.id, m.part.name, m.part.sku
+            """)
+    List<PartConsumptionStats> findConsumptionStatsByClient(Long clientId);
+
+    @Query("""
+            SELECT new com.gomech.dto.Inventory.CriticalPartMovementProjection(
+                m.part.id,
+                COALESCE(v.model, 'Sem Histórico'),
+                COALESCE(SUM(CASE WHEN m.movementType = com.gomech.domain.InventoryMovementType.OUT THEN m.quantity ELSE 0 END), 0),
+                MAX(m.movementDate)
+            )
+            FROM InventoryMovement m
+            LEFT JOIN m.vehicle v
+            WHERE (:vehicleModel IS NULL OR (v.model IS NOT NULL AND UPPER(v.model) = UPPER(:vehicleModel)))
+            GROUP BY m.part.id, COALESCE(v.model, 'Sem Histórico')
+            """)
+    List<CriticalPartMovementProjection> findMovementAggregatesByVehicle(@Param("vehicleModel") String vehicleModel);
 }

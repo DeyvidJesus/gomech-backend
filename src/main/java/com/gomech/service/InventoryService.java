@@ -34,15 +34,18 @@ public class InventoryService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final PartRepository partRepository;
     private final ServiceOrderItemRepository serviceOrderItemRepository;
+    private final InventoryAlertService inventoryAlertService;
 
     public InventoryService(InventoryItemRepository inventoryItemRepository,
                             InventoryMovementRepository inventoryMovementRepository,
                             PartRepository partRepository,
-                            ServiceOrderItemRepository serviceOrderItemRepository) {
+                            ServiceOrderItemRepository serviceOrderItemRepository,
+                            InventoryAlertService inventoryAlertService) {
         this.inventoryItemRepository = inventoryItemRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.partRepository = partRepository;
         this.serviceOrderItemRepository = serviceOrderItemRepository;
+        this.inventoryAlertService = inventoryAlertService;
     }
 
     public InventoryItemResponseDTO createItem(InventoryItemCreateDTO dto) {
@@ -63,7 +66,9 @@ public class InventoryService {
         item.setUnitCost(dto.unitCost());
         item.setSalePrice(dto.salePrice());
 
-        return InventoryItemResponseDTO.fromEntity(inventoryItemRepository.save(item));
+        InventoryItem saved = inventoryItemRepository.save(item);
+        inventoryAlertService.onStockLevelChanged(saved);
+        return InventoryItemResponseDTO.fromEntity(saved);
     }
 
     public InventoryItemResponseDTO updateItem(Long id, InventoryItemUpdateDTO dto) {
@@ -191,7 +196,9 @@ public class InventoryService {
         }
         InventoryItem savedItem = inventoryItemRepository.save(item);
 
-        return recordMovement(savedItem, part, null, null, InventoryMovementType.IN, quantity, referenceCode, notes);
+        InventoryMovement movement = recordMovement(savedItem, part, null, null, InventoryMovementType.IN, quantity, referenceCode, notes);
+        inventoryAlertService.onStockLevelChanged(savedItem);
+        return movement;
     }
 
     public InventoryMovement reserveStock(ServiceOrder serviceOrder,
@@ -207,14 +214,16 @@ public class InventoryService {
         ensureAvailableStock(inventoryItem, quantity);
 
         inventoryItem.setReservedQuantity(inventoryItem.getReservedQuantity() + quantity);
-        inventoryItemRepository.save(inventoryItem);
+        InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(true);
         serviceOrderItemRepository.save(serviceOrderItem);
 
-        return recordMovement(inventoryItem, inventoryItem.getPart(), serviceOrder, serviceOrderItem,
+        InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
                 InventoryMovementType.ADJUSTMENT, quantity, serviceOrder.getOrderNumber(),
                 defaultNotes(notes, "Reserva de estoque"));
+        inventoryAlertService.onStockLevelChanged(savedItem);
+        return movement;
     }
 
     public InventoryMovement consumeStock(ServiceOrder serviceOrder,
@@ -236,14 +245,16 @@ public class InventoryService {
 
         inventoryItem.setReservedQuantity(inventoryItem.getReservedQuantity() - quantity);
         inventoryItem.setQuantity(inventoryItem.getQuantity() - quantity);
-        inventoryItemRepository.save(inventoryItem);
+        InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(false);
         serviceOrderItemRepository.save(serviceOrderItem);
 
-        return recordMovement(inventoryItem, inventoryItem.getPart(), serviceOrder, serviceOrderItem,
+        InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
                 InventoryMovementType.OUT, quantity, serviceOrder.getOrderNumber(),
                 defaultNotes(notes, "Baixa de estoque"));
+        inventoryAlertService.onStockLevelChanged(savedItem);
+        return movement;
     }
 
     public InventoryMovement cancelReservation(ServiceOrder serviceOrder,
@@ -261,14 +272,16 @@ public class InventoryService {
         }
 
         inventoryItem.setReservedQuantity(inventoryItem.getReservedQuantity() - quantity);
-        inventoryItemRepository.save(inventoryItem);
+        InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(false);
         serviceOrderItemRepository.save(serviceOrderItem);
 
-        return recordMovement(inventoryItem, inventoryItem.getPart(), serviceOrder, serviceOrderItem,
+        InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
                 InventoryMovementType.ADJUSTMENT, quantity, serviceOrder.getOrderNumber(),
                 defaultNotes(notes, "Cancelamento de reserva"));
+        inventoryAlertService.onStockLevelChanged(savedItem);
+        return movement;
     }
 
     public InventoryMovement returnToStock(ServiceOrder serviceOrder,
@@ -282,14 +295,16 @@ public class InventoryService {
 
         InventoryItem inventoryItem = getInventoryItem(serviceOrderItem);
         inventoryItem.setQuantity(inventoryItem.getQuantity() + quantity);
-        inventoryItemRepository.save(inventoryItem);
+        InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(false);
         serviceOrderItemRepository.save(serviceOrderItem);
 
-        return recordMovement(inventoryItem, inventoryItem.getPart(), serviceOrder, serviceOrderItem,
+        InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
                 InventoryMovementType.IN, quantity, serviceOrder.getOrderNumber(),
                 defaultNotes(notes, "Devolução ao estoque"));
+        inventoryAlertService.onStockLevelChanged(savedItem);
+        return movement;
     }
 
     public void reconcileServiceOrderInventory(ServiceOrder serviceOrder) {
