@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +47,9 @@ class InventoryServiceTest {
 
     @Mock
     private ServiceOrderItemRepository serviceOrderItemRepository;
+
+    @Mock
+    private InventoryAlertService inventoryAlertService;
 
     @InjectMocks
     private InventoryService inventoryService;
@@ -104,6 +108,7 @@ class InventoryServiceTest {
             movement.setMovementDate(LocalDateTime.now());
             return movement;
         });
+        doNothing().when(inventoryAlertService).onStockLevelChanged(any(InventoryItem.class));
     }
 
     @Test
