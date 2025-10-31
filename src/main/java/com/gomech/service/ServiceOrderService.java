@@ -28,6 +28,9 @@ public class ServiceOrderService {
     @Autowired
     private ClientRepository clientRepository;
 
+    @Autowired
+    private InventoryService inventoryService;
+
     public ServiceOrderResponseDTO create(ServiceOrderCreateDTO dto) {
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
                 .orElseThrow(() -> new RuntimeException("Veículo não encontrado"));
@@ -45,6 +48,7 @@ public class ServiceOrderService {
         }
 
         ServiceOrder saved = serviceOrderRepository.save(serviceOrder);
+        handleInventoryReservations(saved);
         return convertToResponseDTO(saved);
     }
 
@@ -134,6 +138,7 @@ public class ServiceOrderService {
 
         serviceOrder.calculateTotalCost();
         ServiceOrder updated = serviceOrderRepository.save(serviceOrder);
+        handleInventoryReservations(updated);
         return convertToResponseDTO(updated);
     }
 
@@ -146,15 +151,20 @@ public class ServiceOrderService {
             serviceOrder.setActualCompletion(LocalDateTime.now());
         }
 
+        if (dto.getStatus() == ServiceOrderStatus.CANCELLED) {
+            releaseInventoryForServiceOrder(serviceOrder);
+        }
+
         ServiceOrder updated = serviceOrderRepository.save(serviceOrder);
         return convertToResponseDTO(updated);
     }
 
     public void delete(Long id) {
-        if (!serviceOrderRepository.existsById(id)) {
-            throw new RuntimeException("Ordem de serviço não encontrada");
-        }
-        serviceOrderRepository.deleteById(id);
+        ServiceOrder serviceOrder = serviceOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
+
+        releaseInventoryForServiceOrder(serviceOrder);
+        serviceOrderRepository.delete(serviceOrder);
     }
 
     public List<ServiceOrderResponseDTO> getOverdueOrders() {
@@ -234,6 +244,7 @@ public class ServiceOrderService {
         dto.setUnitPrice(item.getUnitPrice());
         dto.setTotalPrice(item.getTotalPrice());
         dto.setProductCode(item.getProductCode());
+        dto.setStockProductId(item.getStockProductId());
         dto.setRequiresStock(item.getRequiresStock());
         dto.setStockReserved(item.getStockReserved());
         dto.setApplied(item.getApplied());
@@ -241,5 +252,37 @@ public class ServiceOrderService {
         dto.setCreatedAt(item.getCreatedAt());
         dto.setUpdatedAt(item.getUpdatedAt());
         return dto;
+    }
+
+    private void handleInventoryReservations(ServiceOrder serviceOrder) {
+        for (ServiceOrderItem item : serviceOrder.getItems()) {
+            if (Boolean.TRUE.equals(item.getRequiresStock())
+                    && item.getStockProductId() != null
+                    && !Boolean.TRUE.equals(item.getStockReserved())
+                    && !Boolean.TRUE.equals(item.getApplied())) {
+                inventoryService.reservePart(item.getStockProductId(), item.getQuantity(), item,
+                        "Reserva automática para a OS " + serviceOrder.getOrderNumber());
+                item.setStockReserved(true);
+            }
+        }
+    }
+
+    private void releaseInventoryForServiceOrder(ServiceOrder serviceOrder) {
+        for (ServiceOrderItem item : serviceOrder.getItems()) {
+            if (!Boolean.TRUE.equals(item.getRequiresStock()) || item.getStockProductId() == null) {
+                continue;
+            }
+
+            if (Boolean.TRUE.equals(item.getApplied())) {
+                inventoryService.returnPart(item.getStockProductId(), item.getQuantity(), false, item,
+                        "Devolução por cancelamento/exclusão da OS");
+                item.unapply();
+                item.setStockReserved(false);
+            } else if (Boolean.TRUE.equals(item.getStockReserved())) {
+                inventoryService.releaseReservation(item.getStockProductId(), item.getQuantity(), item,
+                        "Liberação de reserva por cancelamento/exclusão da OS");
+                item.setStockReserved(false);
+            }
+        }
     }
 }
