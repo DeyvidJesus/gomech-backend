@@ -8,21 +8,31 @@ import com.gomech.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 @Service
 public class TokenService {
     @Value("${api.security.token.secret}")
     private String secret;
 
+    private final Duration accessTokenTtl;
+
+    public TokenService(@Value("${security.access-token.ttl-minutes:15}") long accessTokenMinutes) {
+        this.accessTokenTtl = Duration.ofMinutes(accessTokenMinutes);
+    }
+
     public String generateToken(User user){
+        return generateAccessToken(user);
+    }
+
+    public String generateAccessToken(User user){
         try{
             Algorithm algorithm = Algorithm.HMAC256(secret);
             String token = JWT.create()
                     .withIssuer("auth-api")
                     .withSubject(user.getEmail())
+                    .withClaim("role", user.getRole().name())
                     .withExpiresAt(genExpirationDate())
                     .sign(algorithm);
             return token;
@@ -45,6 +55,6 @@ public class TokenService {
     }
 
     private Instant genExpirationDate(){
-        return LocalDateTime.now().plusDays(7).toInstant(ZoneOffset.of("-03:00"));
+        return Instant.now().plus(accessTokenTtl);
     }
 }
