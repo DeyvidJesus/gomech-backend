@@ -5,10 +5,13 @@ import com.gomech.dto.Inventory.InventoryItemCreateDTO;
 import com.gomech.dto.Inventory.InventoryItemResponseDTO;
 import com.gomech.dto.Inventory.InventoryItemUpdateDTO;
 import com.gomech.dto.Inventory.InventoryMovementResponseDTO;
+import com.gomech.dto.Inventory.InventoryRecommendationDTO;
+import com.gomech.dto.Inventory.InventoryRecommendationRequestDTO;
 import com.gomech.dto.Inventory.StockCancellationRequestDTO;
 import com.gomech.dto.Inventory.StockConsumptionRequestDTO;
 import com.gomech.dto.Inventory.StockReservationRequestDTO;
 import com.gomech.dto.Inventory.StockReturnRequestDTO;
+import com.gomech.service.InventoryRecommendationService;
 import com.gomech.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,9 +31,12 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+    private final InventoryRecommendationService inventoryRecommendationService;
 
-    public InventoryController(InventoryService inventoryService) {
+    public InventoryController(InventoryService inventoryService,
+                               InventoryRecommendationService inventoryRecommendationService) {
         this.inventoryService = inventoryService;
+        this.inventoryRecommendationService = inventoryRecommendationService;
     }
 
     @Operation(summary = "Lista os itens de estoque cadastrados")
@@ -138,6 +144,22 @@ public class InventoryController {
                                                             @RequestParam(required = false) Long serviceOrderId,
                                                             @RequestParam(required = false) Long vehicleId) {
         return inventoryService.listMovements(inventoryItemId, serviceOrderId, vehicleId);
+    }
+
+    @Operation(summary = "Retorna recomendações de peças geradas pela IA")
+    @GetMapping("/recommendations")
+    public ResponseEntity<List<InventoryRecommendationDTO>> getRecommendations(@RequestParam(required = false) Long vehicleId,
+                                                                               @RequestParam(required = false) Long serviceOrderId,
+                                                                               @RequestParam(required = false) Integer limit) {
+        InventoryRecommendationRequestDTO request = new InventoryRecommendationRequestDTO(vehicleId, serviceOrderId, limit);
+        List<InventoryRecommendationDTO> recommendations = inventoryRecommendationService.getRecommendations(request);
+        return ResponseEntity.ok(recommendations);
+    }
+
+    @Operation(summary = "Lista os pipelines de IA mapeados para recomendações de estoque")
+    @GetMapping("/recommendations/pipelines")
+    public ResponseEntity<List<String>> listRecommendationPipelines() {
+        return ResponseEntity.ok(inventoryRecommendationService.listAvailablePipelines());
     }
 
     private ResponseStatusException translateException(RuntimeException ex) {
