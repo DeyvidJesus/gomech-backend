@@ -1,6 +1,5 @@
 package com.gomech.service;
 
-import com.gomech.controller.ServiceOrderController;
 import com.gomech.dto.ServiceOrder.ServiceOrderItemCreateDTO;
 import com.gomech.dto.ServiceOrder.ServiceOrderItemResponseDTO;
 import com.gomech.model.ServiceOrder;
@@ -29,6 +28,9 @@ public class ServiceOrderItemService {
     @Autowired
     private ServiceOrderRepository serviceOrderRepository;
 
+    @Autowired
+    private InventoryService inventoryService;
+
     public ServiceOrderItemResponseDTO addItem(Long serviceOrderId, ServiceOrderItemCreateDTO dto) {
         ServiceOrder serviceOrder = serviceOrderRepository.findById(serviceOrderId)
             .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
@@ -43,7 +45,12 @@ public class ServiceOrderItemService {
         ServiceOrderItem saved = itemRepository.save(item);
         logger.info("Service Order Item Saved: {}", saved.toString());
         logger.info("Service Order To Be Saved: {}", serviceOrder.toString());
-        
+
+        if (Boolean.TRUE.equals(saved.getRequiresStock())) {
+            inventoryService.reserveStock(serviceOrder, saved, saved.getQuantity(),
+                    "Reserva automática ao adicionar item");
+        }
+
         // Recalcular custos da OS
         serviceOrder.calculateTotalCost();
         serviceOrderRepository.save(serviceOrder);
@@ -72,6 +79,9 @@ public class ServiceOrderItemService {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
+        boolean previousRequiresStock = Boolean.TRUE.equals(item.getRequiresStock());
+        int previousQuantity = item.getQuantity();
+
         if (dto.getDescription() != null) {
             item.setDescription(dto.getDescription());
         }
@@ -98,7 +108,9 @@ public class ServiceOrderItemService {
         }
 
         ServiceOrderItem updated = itemRepository.save(item);
-        
+
+        adjustInventoryOnUpdate(updated, previousRequiresStock, previousQuantity);
+
         // Recalcular custos da OS
         ServiceOrder serviceOrder = updated.getServiceOrder();
         serviceOrder.calculateTotalCost();
@@ -112,6 +124,7 @@ public class ServiceOrderItemService {
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
         
         ServiceOrder serviceOrder = item.getServiceOrder();
+        handleInventoryOnDelete(item);
         itemRepository.deleteById(id);
         
         // Recalcular custos da OS
@@ -122,7 +135,12 @@ public class ServiceOrderItemService {
     public ServiceOrderItemResponseDTO applyItem(Long id) {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
-        
+
+        if (Boolean.TRUE.equals(item.getRequiresStock())) {
+            inventoryService.consumeStock(item.getServiceOrder(), item, item.getQuantity(),
+                    "Baixa por aplicação de item");
+        }
+
         item.apply();
         ServiceOrderItem updated = itemRepository.save(item);
         
@@ -137,7 +155,12 @@ public class ServiceOrderItemService {
     public ServiceOrderItemResponseDTO unapplyItem(Long id) {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
-        
+
+        if (Boolean.TRUE.equals(item.getRequiresStock())) {
+            inventoryService.returnToStock(item.getServiceOrder(), item, item.getQuantity(),
+                    "Devolução por desaplicação de item");
+        }
+
         item.unapply();
         ServiceOrderItem updated = itemRepository.save(item);
         
@@ -165,9 +188,9 @@ public class ServiceOrderItemService {
     public ServiceOrderItemResponseDTO reserveStock(Long id) {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
-        
-        // TODO: Implementar lógica de reserva de estoque quando o módulo de estoque for criado
-        item.setStockReserved(true);
+
+        inventoryService.reserveStock(item.getServiceOrder(), item, item.getQuantity(),
+                "Reserva manual de item");
         ServiceOrderItem updated = itemRepository.save(item);
         return convertToResponseDTO(updated);
     }
@@ -175,9 +198,16 @@ public class ServiceOrderItemService {
     public ServiceOrderItemResponseDTO releaseStock(Long id) {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
-        
-        // TODO: Implementar lógica de liberação de estoque quando o módulo de estoque for criado
-        item.setStockReserved(false);
+
+        if (Boolean.TRUE.equals(item.getApplied())) {
+            inventoryService.returnToStock(item.getServiceOrder(), item, item.getQuantity(),
+                    "Devolução manual de item aplicado");
+            item.unapply();
+        } else {
+            inventoryService.cancelReservation(item.getServiceOrder(), item, item.getQuantity(),
+                    "Liberação manual de reserva");
+        }
+
         ServiceOrderItem updated = itemRepository.save(item);
         return convertToResponseDTO(updated);
     }
@@ -199,5 +229,62 @@ public class ServiceOrderItemService {
         dto.setCreatedAt(item.getCreatedAt());
         dto.setUpdatedAt(item.getUpdatedAt());
         return dto;
+    }
+
+    private void adjustInventoryOnUpdate(ServiceOrderItem updated, boolean previousRequiresStock, int previousQuantity) {
+        boolean currentRequiresStock = Boolean.TRUE.equals(updated.getRequiresStock());
+        int currentQuantity = updated.getQuantity();
+        ServiceOrder serviceOrder = updated.getServiceOrder();
+
+        if (currentRequiresStock && !previousRequiresStock) {
+            inventoryService.reserveStock(serviceOrder, updated, currentQuantity,
+                    "Reserva ao atualizar item para exigir estoque");
+            return;
+        }
+
+        if (!currentRequiresStock && previousRequiresStock) {
+            if (Boolean.TRUE.equals(updated.getApplied())) {
+                inventoryService.returnToStock(serviceOrder, updated, previousQuantity,
+                        "Devolução ao remover controle de estoque de item aplicado");
+                updated.unapply();
+            } else if (Boolean.TRUE.equals(updated.getStockReserved())) {
+                inventoryService.cancelReservation(serviceOrder, updated, previousQuantity,
+                        "Cancelamento de reserva ao remover controle de estoque");
+            }
+            return;
+        }
+
+        if (currentRequiresStock) {
+            int difference = currentQuantity - previousQuantity;
+            if (difference > 0) {
+                inventoryService.reserveStock(serviceOrder, updated, difference,
+                        "Reserva adicional por aumento de quantidade");
+            } else if (difference < 0) {
+                int release = Math.abs(difference);
+                if (Boolean.TRUE.equals(updated.getApplied())) {
+                    inventoryService.returnToStock(serviceOrder, updated, release,
+                            "Devolução parcial por redução de quantidade aplicada");
+                } else {
+                    inventoryService.cancelReservation(serviceOrder, updated, release,
+                            "Cancelamento parcial de reserva por redução de quantidade");
+                }
+            }
+        }
+    }
+
+    private void handleInventoryOnDelete(ServiceOrderItem item) {
+        if (!Boolean.TRUE.equals(item.getRequiresStock())) {
+            return;
+        }
+
+        ServiceOrder serviceOrder = item.getServiceOrder();
+        if (Boolean.TRUE.equals(item.getApplied())) {
+            inventoryService.returnToStock(serviceOrder, item, item.getQuantity(),
+                    "Devolução por remoção de item aplicado");
+            item.unapply();
+        } else if (Boolean.TRUE.equals(item.getStockReserved())) {
+            inventoryService.cancelReservation(serviceOrder, item, item.getQuantity(),
+                    "Cancelamento de reserva por remoção de item");
+        }
     }
 }

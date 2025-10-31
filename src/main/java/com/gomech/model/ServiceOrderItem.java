@@ -43,8 +43,8 @@ public class ServiceOrderItem {
     @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal unitPrice = BigDecimal.ZERO;
 
-    @Column(precision = 10, scale = 2, nullable = false, 
-            columnDefinition = "numeric(10,2) generated always as (((quantity)::numeric * unit_price)) stored",
+    @Column(precision = 10, scale = 2, nullable = false,
+            columnDefinition = "numeric(10,2) generated always as (quantity * unit_price) stored",
             insertable = false, updatable = false)
     private BigDecimal totalPrice;
 

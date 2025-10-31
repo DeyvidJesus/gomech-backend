@@ -1,0 +1,109 @@
+CREATE TABLE clients (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255),
+    address VARCHAR(255),
+    birth_date TIMESTAMP,
+    document VARCHAR(255),
+    observations VARCHAR(255),
+    phone VARCHAR(255),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE vehicles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    client_id BIGINT,
+    license_plate VARCHAR(20),
+    brand VARCHAR(100),
+    model VARCHAR(100),
+    manufacture_date TIMESTAMP,
+    color VARCHAR(50),
+    observations VARCHAR(255),
+    kilometers INTEGER,
+    chassis_id VARCHAR(100),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE parts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    sku VARCHAR(100) NOT NULL,
+    manufacturer VARCHAR(150),
+    description TEXT,
+    unit_cost NUMERIC(10,2),
+    unit_price NUMERIC(10,2),
+    active BOOLEAN,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE service_orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_number VARCHAR(50) NOT NULL,
+    vehicle_id BIGINT,
+    client_id BIGINT,
+    description TEXT,
+    problem_description TEXT,
+    diagnosis TEXT,
+    solution_description TEXT,
+    status VARCHAR(20),
+    labor_cost NUMERIC(10,2),
+    parts_cost NUMERIC(10,2),
+    total_cost NUMERIC(10,2),
+    discount NUMERIC(10,2),
+    estimated_completion TIMESTAMP,
+    actual_completion TIMESTAMP,
+    observations TEXT,
+    technician_name VARCHAR(100),
+    current_kilometers NUMERIC(10,2),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE service_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    service_order_id BIGINT NOT NULL,
+    description VARCHAR(500) NOT NULL,
+    item_type VARCHAR(20) NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit_price NUMERIC(10,2) NOT NULL,
+    total_price NUMERIC(10,2),
+    product_code VARCHAR(100),
+    stock_product_id BIGINT,
+    requires_stock BOOLEAN,
+    stock_reserved BOOLEAN,
+    observations TEXT,
+    applied BOOLEAN,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE inventory_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    part_id BIGINT NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    quantity INTEGER NOT NULL,
+    reserved_quantity INTEGER NOT NULL,
+    minimum_quantity INTEGER NOT NULL,
+    unit_cost NUMERIC(10,2),
+    sale_price NUMERIC(10,2),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE inventory_movements (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    inventory_item_id BIGINT NOT NULL,
+    part_id BIGINT NOT NULL,
+    service_order_id BIGINT,
+    vehicle_id BIGINT,
+    movement_type VARCHAR(20) NOT NULL,
+    quantity INTEGER NOT NULL,
+    reference_code VARCHAR(100),
+    notes TEXT,
+    movement_date TIMESTAMP,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);

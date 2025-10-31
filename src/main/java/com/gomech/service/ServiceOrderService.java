@@ -28,6 +28,9 @@ public class ServiceOrderService {
     @Autowired
     private ClientRepository clientRepository;
 
+    @Autowired
+    private InventoryService inventoryService;
+
     public ServiceOrderResponseDTO create(ServiceOrderCreateDTO dto) {
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
                 .orElseThrow(() -> new RuntimeException("Veículo não encontrado"));
@@ -45,6 +48,7 @@ public class ServiceOrderService {
         }
 
         ServiceOrder saved = serviceOrderRepository.save(serviceOrder);
+        inventoryService.reserveItemsForOrder(saved);
         return convertToResponseDTO(saved);
     }
 
@@ -123,6 +127,9 @@ public class ServiceOrderService {
             if (dto.getStatus() == ServiceOrderStatus.COMPLETED || dto.getStatus() == ServiceOrderStatus.DELIVERED) {
                 serviceOrder.setActualCompletion(LocalDateTime.now());
             }
+            if (dto.getStatus() == ServiceOrderStatus.CANCELLED) {
+                inventoryService.reconcileServiceOrderInventory(serviceOrder);
+            }
         }
         if (dto.getLaborCost() != null) serviceOrder.setLaborCost(dto.getLaborCost());
         if (dto.getPartsCost() != null) serviceOrder.setPartsCost(dto.getPartsCost());
@@ -144,6 +151,9 @@ public class ServiceOrderService {
         serviceOrder.setStatus(dto.getStatus());
         if (dto.getStatus() == ServiceOrderStatus.COMPLETED || dto.getStatus() == ServiceOrderStatus.DELIVERED) {
             serviceOrder.setActualCompletion(LocalDateTime.now());
+        }
+        if (dto.getStatus() == ServiceOrderStatus.CANCELLED) {
+            inventoryService.reconcileServiceOrderInventory(serviceOrder);
         }
 
         ServiceOrder updated = serviceOrderRepository.save(serviceOrder);
