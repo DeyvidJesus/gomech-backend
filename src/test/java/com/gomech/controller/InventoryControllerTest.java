@@ -7,12 +7,14 @@ import com.gomech.dto.Inventory.InventoryEntryRequestDTO;
 import com.gomech.dto.Inventory.InventoryItemCreateDTO;
 import com.gomech.dto.Inventory.InventoryItemResponseDTO;
 import com.gomech.dto.Inventory.InventoryMovementResponseDTO;
+import com.gomech.dto.Inventory.InventoryRecommendationDTO;
 import com.gomech.dto.Inventory.StockReservationRequestDTO;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
+import com.gomech.service.InventoryRecommendationService;
 import com.gomech.service.InventoryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,9 @@ class InventoryControllerTest {
 
     @MockBean
     private InventoryService inventoryService;
+
+    @MockBean
+    private InventoryRecommendationService inventoryRecommendationService;
 
     @MockBean
     private SecurityFilter securityFilter;
@@ -135,5 +140,28 @@ class InventoryControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(11L));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldReturnInventoryRecommendations() throws Exception {
+        InventoryRecommendationDTO recommendation = new InventoryRecommendationDTO(1L, "Filtro", "FLT-001", 0.87,
+                "Sugestão personalizada", false, 12L, LocalDateTime.now());
+
+        when(inventoryRecommendationService.getRecommendations(any())).thenReturn(List.of(recommendation));
+
+        mockMvc.perform(get("/inventory/recommendations").param("vehicleId", "200").param("limit", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].partSku").value("FLT-001"));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldExposeAiPipelines() throws Exception {
+        when(inventoryRecommendationService.listAvailablePipelines()).thenReturn(List.of("inventory-recommendation"));
+
+        mockMvc.perform(get("/inventory/recommendations/pipelines"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0]").value("inventory-recommendation"));
     }
 }
