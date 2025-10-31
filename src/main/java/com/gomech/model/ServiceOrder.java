@@ -1,10 +1,11 @@
 package com.gomech.model;
 
+import com.gomech.domain.InventoryMovement;
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,7 +16,7 @@ import java.util.List;
 
 @Getter
 @Setter
-@ToString(exclude = {"items", "vehicle", "client"})
+@ToString(exclude = {"items", "vehicle", "client", "inventoryMovements"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "service_orders")
@@ -87,6 +88,9 @@ public class ServiceOrder {
     @OneToMany(mappedBy = "serviceOrder", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ServiceOrderItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "serviceOrder", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<InventoryMovement> inventoryMovements = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -129,5 +133,15 @@ public class ServiceOrder {
         this.items.remove(item);
         item.setServiceOrder(null);
         calculateTotalCost();
+    }
+
+    public void addInventoryMovement(InventoryMovement movement) {
+        movement.setServiceOrder(this);
+        this.inventoryMovements.add(movement);
+    }
+
+    public void removeInventoryMovement(InventoryMovement movement) {
+        this.inventoryMovements.remove(movement);
+        movement.setServiceOrder(null);
     }
 }
