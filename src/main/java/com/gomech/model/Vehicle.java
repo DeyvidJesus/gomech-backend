@@ -1,19 +1,26 @@
 package com.gomech.model;
 
+import com.gomech.domain.InventoryMovement;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @Entity
 @Setter
 @Getter
+@ToString(exclude = "inventoryMovements")
+@EqualsAndHashCode(exclude = "inventoryMovements")
 @Table(name = "vehicles")
 public class Vehicle {
     @Id
@@ -54,6 +61,9 @@ public class Vehicle {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
+    private List<InventoryMovement> inventoryMovements = new ArrayList<>();
 
     public Vehicle() {}
 
