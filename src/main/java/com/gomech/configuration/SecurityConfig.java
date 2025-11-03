@@ -29,10 +29,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfig = new org.springframework.web.cors.CorsConfiguration();
-                    corsConfig.setAllowedOrigins(java.util.List.of("http://localhost:3000", "https://app.go-mech.com", "https://api.go-mech.com"));
+                    corsConfig.setAllowedOrigins(java.util.List.of(
+                        "http://localhost:3000",
+                        "https://app.go-mech.com"
+                    ));
                     corsConfig.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    corsConfig.setAllowedHeaders(java.util.List.of("*"));
-                    corsConfig.setAllowCredentials(false);
+                    corsConfig.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type"));
+                    corsConfig.setAllowCredentials(true);
                     corsConfig.setMaxAge(3600L);
                     return corsConfig;
                 }))
@@ -63,3 +66,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+
