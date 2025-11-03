@@ -33,7 +33,18 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(withDefaults())
+                .cors(cors -> cors.configurationSource(request -> {
+                    var corsConfig = new org.springframework.web.cors.CorsConfiguration();
+                    corsConfig.setAllowedOrigins(java.util.List.of(
+                        "http://localhost:3000",
+                        "https://app.go-mech.com"
+                    ));
+                    corsConfig.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    corsConfig.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type"));
+                    corsConfig.setAllowCredentials(true);
+                    corsConfig.setMaxAge(3600L);
+                    return corsConfig;
+                }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
@@ -71,3 +82,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+
