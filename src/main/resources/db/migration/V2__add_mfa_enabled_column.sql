@@ -16,28 +16,31 @@ DO $$
 BEGIN
     IF EXISTS (
         SELECT 1
-        FROM information_schema.tables
+        FROM information_schema.columns
         WHERE table_schema = 'public'
-          AND table_name = 'roles'
+          AND table_name = 'users'
+          AND column_name = 'role_id'
     ) THEN
         UPDATE users u
         SET role = r.nome
         FROM roles r
         WHERE u.role IS NULL
-          AND u.role_id = r.id;
+          AND r.id = u.role_id;
     END IF;
 END $$;
 
--- Backfill defaults for null values
+-- Backfill defaults for null or blank values
 UPDATE users
 SET name = COALESCE(NULLIF(name, ''), email, 'User'),
-    role = COALESCE(NULLIF(role, ''), 'USER'),
-    mfa_enabled = COALESCE(mfa_enabled, FALSE)
+    role = COALESCE(NULLIF(role, ''), 'USER')
 WHERE name IS NULL
    OR name = ''
    OR role IS NULL
-   OR role = ''
-   OR mfa_enabled IS NULL;
+   OR role = '';
+
+UPDATE users
+SET mfa_enabled = FALSE
+WHERE mfa_enabled IS NULL;
 
 -- Enforce constraints expected by the application
 ALTER TABLE users
@@ -51,8 +54,19 @@ ALTER TABLE users
     ALTER COLUMN mfa_enabled SET NOT NULL;
 
 -- Clean up legacy relationship columns
-ALTER TABLE users
-    DROP CONSTRAINT IF EXISTS fk_users_role;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'users'
+          AND column_name = 'role_id'
+    ) THEN
+        ALTER TABLE users
+            DROP CONSTRAINT IF EXISTS fk_users_role;
 
-ALTER TABLE users
-    DROP COLUMN IF EXISTS role_id;
+        ALTER TABLE users
+            DROP COLUMN IF EXISTS role_id;
+    END IF;
+END $$;
