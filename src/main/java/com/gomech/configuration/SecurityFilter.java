@@ -16,30 +16,41 @@ import java.io.IOException;
 
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
+
     @Autowired
-    TokenService tokenService;
+    private TokenService tokenService;
+
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         var token = this.recoverToken(request);
-        if(token != null && !token.isEmpty()){
+        if (token != null && !token.isEmpty()) {
             var login = tokenService.validateToken(token);
-            if(login != null && !login.isEmpty()){
+            if (login != null && !login.isEmpty()) {
                 UserDetails user = userRepository.findByEmail(login);
-                if(user != null){
-                    var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                if (user != null) {
+                    var authentication = new UsernamePasswordAuthenticationToken(
+                            user, null, user.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
         }
+
         filterChain.doFilter(request, response);
     }
 
-    private String recoverToken(HttpServletRequest request){
+    private String recoverToken(HttpServletRequest request) {
         var authHeader = request.getHeader("Authorization");
-        if(authHeader == null) return null;
+        if (authHeader == null) return null;
         return authHeader.replace("Bearer ", "");
     }
 
