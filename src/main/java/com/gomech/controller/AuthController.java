@@ -11,6 +11,7 @@ import com.gomech.model.RefreshToken;
 import com.gomech.model.User;
 import com.gomech.service.MfaService;
 import com.gomech.service.RefreshTokenService;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,7 @@ public class AuthController {
     private MfaService mfaService;
 
     @PostMapping("/login")
+    @Transactional
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
@@ -55,7 +57,15 @@ public class AuthController {
         var accessToken = tokenService.generateAccessToken(user);
         var refreshToken = refreshTokenService.createToken(user);
 
-        return ResponseEntity.ok(new LoginResponseDTO(accessToken, refreshToken, false, user.getEmail(), user.getName(), user.getRole().name(), user.getId()));
+        return ResponseEntity.ok(new LoginResponseDTO(
+                accessToken,
+                refreshToken,
+                false,
+                user.getEmail(),
+                user.getName(),
+                user.getRole().name(),
+                user.getId()
+        ));
     }
 
     @PostMapping("/register")
