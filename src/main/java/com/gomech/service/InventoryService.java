@@ -4,6 +4,8 @@ import com.gomech.domain.InventoryItem;
 import com.gomech.domain.InventoryMovement;
 import com.gomech.domain.InventoryMovementType;
 import com.gomech.domain.Part;
+import com.gomech.context.OrganizationContext;
+import com.gomech.model.Organization;
 import com.gomech.dto.Inventory.InventoryEntryRequestDTO;
 import com.gomech.dto.Inventory.InventoryItemCreateDTO;
 import com.gomech.dto.Inventory.InventoryItemResponseDTO;
@@ -79,6 +81,7 @@ public class InventoryService {
 
         InventoryItem item = new InventoryItem();
         item.setPart(part);
+        item.setOrganization(resolveOrganizationFromPart(part));
         item.setLocation(dto.location());
         item.setQuantity(0);
         item.setReservedQuantity(0);
@@ -415,6 +418,7 @@ public class InventoryService {
     private InventoryItem createInventoryItem(Part part, String location) {
         InventoryItem item = new InventoryItem();
         item.setPart(part);
+        item.setOrganization(resolveOrganizationFromPart(part));
         item.setLocation(location);
         item.setQuantity(0);
         item.setReservedQuantity(0);
@@ -436,6 +440,11 @@ public class InventoryService {
         movement.setServiceOrder(serviceOrder);
         if (serviceOrder != null) {
             movement.setVehicle(serviceOrder.getVehicle());
+        }
+        if (inventoryItem.getOrganization() != null) {
+            movement.setOrganization(inventoryItem.getOrganization());
+        } else {
+            movement.setOrganization(requireOrganization());
         }
         movement.setMovementType(type);
         movement.setQuantity(quantity);
@@ -489,6 +498,21 @@ public class InventoryService {
             throw new IllegalArgumentException("Item informado não requer controle de estoque");
         }
         return item;
+    }
+
+    private Organization resolveOrganizationFromPart(Part part) {
+        if (part.getOrganization() != null) {
+            return part.getOrganization();
+        }
+        return requireOrganization();
+    }
+
+    private Organization requireOrganization() {
+        Organization organization = OrganizationContext.getOrganization();
+        if (organization == null) {
+            throw new IllegalStateException("Organização não encontrada no contexto da requisição");
+        }
+        return organization;
     }
 
     public List<InventoryItemResponseDTO> saveFromFile(MultipartFile file) {

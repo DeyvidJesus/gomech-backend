@@ -7,6 +7,8 @@ import com.gomech.dto.Authentication.RefreshTokenRequest;
 import com.gomech.dto.Authentication.RegisterDTO;
 import com.gomech.dto.Authentication.RegisterResponseDTO;
 import com.gomech.dto.Authentication.TokenPairDTO;
+import com.gomech.dto.Organization.OrganizationBasicInfoDTO;
+import com.gomech.model.Organization;
 import com.gomech.model.RefreshToken;
 import com.gomech.model.User;
 import com.gomech.service.MfaService;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.gomech.repository.UserRepository;
+import com.gomech.repository.OrganizationRepository;
 
 import jakarta.validation.Valid;
 
@@ -33,6 +36,8 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
     @Autowired
     private UserRepository repository;
+    @Autowired
+    private OrganizationRepository organizationRepository;
     @Autowired
     private TokenService tokenService;
     @Autowired
@@ -50,7 +55,15 @@ public class AuthController {
         if (user.isMfaEnabled()) {
             if (data.mfaCode() == null || !mfaService.verifyCode(user.getMfaSecret(), data.mfaCode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new LoginResponseDTO(null, null, true, user.getEmail(), user.getName(), user.getRole().name(), user.getId()));
+                        .body(new LoginResponseDTO(
+                                null,
+                                null,
+                                true,
+                                user.getEmail(),
+                                user.getName(),
+                                user.getRole().name(),
+                                user.getId(),
+                                OrganizationBasicInfoDTO.fromEntity(user.getOrganization())));
             }
         }
 
@@ -64,16 +77,30 @@ public class AuthController {
                 user.getEmail(),
                 user.getName(),
                 user.getRole().name(),
-                user.getId()
+                user.getId(),
+                OrganizationBasicInfoDTO.fromEntity(user.getOrganization())
         ));
     }
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponseDTO> register(@RequestBody @Valid RegisterDTO data){
-        if(this.repository.findByEmail(data.email()) != null) return ResponseEntity.badRequest().build();
+        if (this.repository.findByEmail(data.email()).isPresent()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (data.organizationId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Organization organization = organizationRepository.findById(data.organizationId())
+                .orElse(null);
+
+        if (organization == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User newUser = new User(data.name(), data.email(), encryptedPassword, data.role());
+        User newUser = new User(data.name(), data.email(), encryptedPassword, data.role(), organization);
 
         String mfaSecret = null;
         if (data.mfaEnabled()) {

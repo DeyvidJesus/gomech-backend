@@ -11,7 +11,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +46,7 @@ class AuditControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithUserDetails(value = "admin@example.com", userDetailsServiceBeanName = "authService")
     void auditEventPersistsAndPublishesToBlockchain() throws Exception {
         AuditEventRequest request = new AuditEventRequest(
                 "SERVICE_ORDER_UPDATED",
@@ -75,7 +75,7 @@ class AuditControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithUserDetails(value = "admin@example.com", userDetailsServiceBeanName = "authService")
     void listEventsReturnsPaginatedAuditTrail() throws Exception {
         AuditEventRequest request = new AuditEventRequest(
                 "CLIENT_CREATED",
