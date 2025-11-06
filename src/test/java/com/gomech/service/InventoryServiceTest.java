@@ -5,6 +5,7 @@ import com.gomech.domain.InventoryMovement;
 import com.gomech.domain.InventoryMovementType;
 import com.gomech.domain.Part;
 import com.gomech.model.Client;
+import com.gomech.model.Organization;
 import com.gomech.model.ServiceOrder;
 import com.gomech.model.ServiceOrderItem;
 import com.gomech.model.ServiceOrderItemType;
@@ -13,6 +14,7 @@ import com.gomech.repository.InventoryItemRepository;
 import com.gomech.repository.InventoryMovementRepository;
 import com.gomech.repository.PartRepository;
 import com.gomech.repository.ServiceOrderItemRepository;
+import com.gomech.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +54,9 @@ class InventoryServiceTest {
     @Mock
     private InventoryAlertService inventoryAlertService;
 
+    @Mock
+    private AuditService auditService;
+
     @InjectMocks
     private InventoryService inventoryService;
 
@@ -62,12 +67,16 @@ class InventoryServiceTest {
 
     @BeforeEach
     void init() {
+        Organization organization = new Organization();
+        organization.setId(1L);
+
         part = new Part();
         part.setId(1L);
         part.setName("Filtro de óleo");
         part.setSku("FLT-001");
         part.setUnitCost(new BigDecimal("30.00"));
         part.setUnitPrice(new BigDecimal("50.00"));
+        part.setOrganization(organization);
 
         inventoryItem = new InventoryItem();
         inventoryItem.setId(10L);
@@ -75,20 +84,24 @@ class InventoryServiceTest {
         inventoryItem.setLocation("MAIN");
         inventoryItem.setQuantity(10);
         inventoryItem.setReservedQuantity(0);
+        inventoryItem.setOrganization(organization);
 
         Client client = new Client();
         client.setId(100L);
         client.setName("Jane");
+        client.setOrganization(organization);
         Vehicle vehicle = new Vehicle();
         vehicle.setId(200L);
         vehicle.setClient(client);
         vehicle.setLicensePlate("XYZ9Z99");
+        vehicle.setOrganization(organization);
 
         serviceOrder = new ServiceOrder();
         serviceOrder.setId(300L);
         serviceOrder.setClient(client);
         serviceOrder.setVehicle(vehicle);
         serviceOrder.setOrderNumber("OS-TEST");
+        serviceOrder.setOrganization(organization);
 
         serviceOrderItem = new ServiceOrderItem();
         serviceOrderItem.setId(400L);

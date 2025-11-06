@@ -8,6 +8,7 @@ import com.gomech.dto.Inventory.PartConsumptionStats;
 import com.gomech.dto.Inventory.StockConsumptionRequestDTO;
 import com.gomech.dto.Inventory.StockReservationRequestDTO;
 import com.gomech.model.Client;
+import com.gomech.model.Organization;
 import com.gomech.model.ServiceOrder;
 import com.gomech.model.ServiceOrderItem;
 import com.gomech.model.ServiceOrderItemType;
@@ -20,6 +21,10 @@ import com.gomech.repository.ServiceOrderItemRepository;
 import com.gomech.repository.ServiceOrderRepository;
 import com.gomech.repository.VehicleRepository;
 import com.gomech.repository.ClientRepository;
+import com.gomech.repository.OrganizationRepository;
+import com.gomech.context.OrganizationContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,8 +68,24 @@ class InventoryAlertAndReportIntegrationTest {
     @Autowired
     private ServiceOrderItemRepository serviceOrderItemRepository;
 
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
     @MockBean
     private NotificationGateway notificationGateway;
+
+    private Organization organization;
+
+    @BeforeEach
+    void setUpContext() {
+        organization = organizationRepository.findById(1L).orElseThrow();
+        OrganizationContext.setOrganization(organization);
+    }
+
+    @AfterEach
+    void clearContext() {
+        OrganizationContext.clear();
+    }
 
     @Test
     void shouldNotifyAndUpdateReportsWhenStockBecomesCritical() {
@@ -73,6 +94,7 @@ class InventoryAlertAndReportIntegrationTest {
         part.setSku("FLT-001");
         part.setUnitCost(new BigDecimal("35.00"));
         part.setUnitPrice(new BigDecimal("60.00"));
+        part.setOrganization(organization);
         Part savedPart = partRepository.save(part);
 
         InventoryItem inventoryItem = new InventoryItem();
@@ -81,10 +103,12 @@ class InventoryAlertAndReportIntegrationTest {
         inventoryItem.setQuantity(5);
         inventoryItem.setReservedQuantity(0);
         inventoryItem.setMinimumQuantity(2);
+        inventoryItem.setOrganization(organization);
         InventoryItem savedInventoryItem = inventoryItemRepository.save(inventoryItem);
 
         Client client = new Client();
         client.setName("João Mecânico");
+        client.setOrganization(organization);
         Client savedClient = clientRepository.save(client);
 
         Vehicle vehicle = new Vehicle();
@@ -96,12 +120,14 @@ class InventoryAlertAndReportIntegrationTest {
         vehicle.setColor("Preto");
         vehicle.setKilometers(120000);
         vehicle.setChassisId("CHASSIS123");
+        vehicle.setOrganization(organization);
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
 
         ServiceOrder serviceOrder = new ServiceOrder();
         serviceOrder.setClient(savedClient);
         serviceOrder.setVehicle(savedVehicle);
         serviceOrder.setDescription("Revisão completa");
+        serviceOrder.setOrganization(organization);
         ServiceOrder savedServiceOrder = serviceOrderRepository.save(serviceOrder);
 
         ServiceOrderItem serviceOrderItem = new ServiceOrderItem();

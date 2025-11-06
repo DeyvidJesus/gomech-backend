@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gomech.dto.Authentication.AuthenticationDTO;
 import com.gomech.dto.Authentication.RefreshTokenRequest;
+import com.gomech.model.Organization;
 import com.gomech.model.Role;
 import com.gomech.model.User;
 import com.gomech.repository.UserRepository;
+import com.gomech.repository.OrganizationRepository;
 import com.gomech.service.MfaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,14 +43,20 @@ class AuthControllerTest {
     @Autowired
     private MfaService mfaService;
 
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
+    private Organization organization;
+
     @BeforeEach
     void setup() {
         userRepository.deleteAll();
+        organization = organizationRepository.findById(1L).orElseThrow();
     }
 
     @Test
     void loginWithoutMfaReturnsTokens() throws Exception {
-        User user = new User("Admin", "admin@gomech.com", passwordEncoder.encode("password"), Role.ADMIN);
+        User user = new User("Admin", "admin@gomech.com", passwordEncoder.encode("password"), Role.ADMIN, organization);
         userRepository.save(user);
 
         AuthenticationDTO request = new AuthenticationDTO(user.getEmail(), "password", null);
@@ -68,7 +76,7 @@ class AuthControllerTest {
 
     @Test
     void loginWithMfaRequiresValidCode() throws Exception {
-        User user = new User("User", "user@gomech.com", passwordEncoder.encode("password"), Role.USER);
+        User user = new User("User", "user@gomech.com", passwordEncoder.encode("password"), Role.USER, organization);
         String secret = mfaService.generateSecret();
         user.enableMfa(mfaService.encryptSecret(secret));
         userRepository.save(user);
@@ -93,7 +101,7 @@ class AuthControllerTest {
 
     @Test
     void refreshTokenGeneratesNewPair() throws Exception {
-        User user = new User("Admin", "refresh@gomech.com", passwordEncoder.encode("password"), Role.ADMIN);
+        User user = new User("Admin", "refresh@gomech.com", passwordEncoder.encode("password"), Role.ADMIN, organization);
         userRepository.save(user);
 
         AuthenticationDTO request = new AuthenticationDTO(user.getEmail(), "password", null);

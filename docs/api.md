@@ -12,8 +12,8 @@ Este documento lista os principais endpoints expostos pelo backend GoMech, inclu
 
 | Método | Caminho | Auth | Corpo | Resposta |
 |--------|---------|------|-------|----------|
-| POST | `/auth/login` | PUBLIC | `AuthenticationDTO { email, password, mfaCode? }` | `LoginResponseDTO { accessToken, refreshToken, mfaRequired, email, name, role, id }` |
-| POST | `/auth/register` | PUBLIC | `RegisterDTO { name, email, password, role, mfaEnabled }` | `RegisterResponseDTO { userId, mfaEnabled, mfaSecret? }` |
+| POST | `/auth/login` | PUBLIC | `AuthenticationDTO { email, password, mfaCode? }` | `LoginResponseDTO { accessToken, refreshToken, mfaRequired, email, name, role, id, organization }` |
+| POST | `/auth/register` | PUBLIC | `RegisterDTO { name, email, password, role, mfaEnabled, organizationId }` | `RegisterResponseDTO { userId, mfaEnabled, mfaSecret? }` |
 | POST | `/auth/refresh` | PUBLIC | `RefreshTokenRequest { refreshToken }` | `TokenPairDTO { accessToken, refreshToken }` |
 
 Detalhes de validação MFA e tokens estão em [docs/security.md](security.md). 【F:src/main/java/com/gomech/controller/AuthController.java†L32-L85】

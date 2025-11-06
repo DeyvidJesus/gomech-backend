@@ -39,7 +39,7 @@ public class ChatController {
                         .body(new ChatResponseDTO(null, "Prompt não pode ser vazio", null, null, null));
             }
 
-            User user = userRepository.findById(String.valueOf(request.getUserId()))
+            User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
             String existingThreadId = conversationRepository.findThreadIdByUserId(user.getId())
