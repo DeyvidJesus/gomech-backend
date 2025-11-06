@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,9 @@ public class ServiceOrderItemService {
     @Autowired
     private InventoryService inventoryService;
 
+    @Autowired
+    private ServiceOrderItemAssembler serviceOrderItemAssembler;
+
     public ServiceOrderItemResponseDTO addItem(Long serviceOrderId, ServiceOrderItemCreateDTO dto) {
         ServiceOrder serviceOrder = serviceOrderRepository.findById(serviceOrderId)
             .orElseThrow(() -> new RuntimeException("Ordem de serviço não encontrada"));
@@ -38,10 +42,7 @@ public class ServiceOrderItemService {
         logger.info("Service Order Item: {}", dto);
         logger.info("Service Order ID: {}", serviceOrderId);
 
-        ServiceOrderItem item = new ServiceOrderItem();
-        item.setServiceOrder(serviceOrder);
-        ServiceOrderService.getServiceOrderItem(dto, item);
-
+        ServiceOrderItem item = serviceOrderItemAssembler.create(serviceOrder, dto);
         ServiceOrderItem saved = itemRepository.save(item);
         logger.info("Service Order Item Saved: {}", saved.toString());
         logger.info("Service Order To Be Saved: {}", serviceOrder.toString());
@@ -81,35 +82,24 @@ public class ServiceOrderItemService {
 
         boolean previousRequiresStock = Boolean.TRUE.equals(item.getRequiresStock());
         int previousQuantity = item.getQuantity();
+        Long previousInventoryItemId = item.getInventoryItem() != null ? item.getInventoryItem().getId() : null;
+        Long newInventoryItemId = dto.getInventoryItemId();
+        boolean inventoryItemWillChange = newInventoryItemId != null && !Objects.equals(previousInventoryItemId, newInventoryItemId);
 
-        if (dto.getDescription() != null) {
-            item.setDescription(dto.getDescription());
-        }
-        if (dto.getItemType() != null) {
-            item.setItemType(dto.getItemType());
-        }
-        if (dto.getQuantity() != null) {
-            item.setQuantity(dto.getQuantity());
-        }
-        if (dto.getUnitPrice() != null) {
-            item.setUnitPrice(dto.getUnitPrice());
-        }
-        if (dto.getProductCode() != null) {
-            item.setProductCode(dto.getProductCode());
-        }
-        if (dto.getStockProductId() != null) {
-            item.setStockProductId(dto.getStockProductId());
-        }
-        if (dto.getRequiresStock() != null) {
-            item.setRequiresStock(dto.getRequiresStock());
-        }
-        if (dto.getObservations() != null) {
-            item.setObservations(dto.getObservations());
+        if (inventoryItemWillChange && previousRequiresStock) {
+            handleInventoryOnDelete(item);
+            item.setInventoryItem(null);
         }
 
+        serviceOrderItemAssembler.update(item, dto);
         ServiceOrderItem updated = itemRepository.save(item);
 
-        adjustInventoryOnUpdate(updated, previousRequiresStock, previousQuantity);
+        adjustInventoryOnUpdate(updated, previousRequiresStock, previousQuantity, inventoryItemWillChange);
+
+        if (!Boolean.TRUE.equals(updated.getRequiresStock())) {
+            updated.setInventoryItem(null);
+            itemRepository.save(updated);
+        }
 
         // Recalcular custos da OS
         ServiceOrder serviceOrder = updated.getServiceOrder();
@@ -221,7 +211,15 @@ public class ServiceOrderItemService {
         dto.setUnitPrice(item.getUnitPrice());
         dto.setTotalPrice(item.getTotalPrice());
         dto.setProductCode(item.getProductCode());
-        dto.setStockProductId(item.getStockProductId());
+        if (item.getPart() != null) {
+            dto.setPartId(item.getPart().getId());
+            dto.setPartName(item.getPart().getName());
+            dto.setPartSku(item.getPart().getSku());
+        }
+        if (item.getInventoryItem() != null) {
+            dto.setInventoryItemId(item.getInventoryItem().getId());
+            dto.setInventoryLocation(item.getInventoryItem().getLocation());
+        }
         dto.setRequiresStock(item.getRequiresStock());
         dto.setStockReserved(item.getStockReserved());
         dto.setApplied(item.getApplied());
@@ -231,7 +229,10 @@ public class ServiceOrderItemService {
         return dto;
     }
 
-    private void adjustInventoryOnUpdate(ServiceOrderItem updated, boolean previousRequiresStock, int previousQuantity) {
+    private void adjustInventoryOnUpdate(ServiceOrderItem updated,
+                                        boolean previousRequiresStock,
+                                        int previousQuantity,
+                                        boolean inventoryItemChanged) {
         boolean currentRequiresStock = Boolean.TRUE.equals(updated.getRequiresStock());
         int currentQuantity = updated.getQuantity();
         ServiceOrder serviceOrder = updated.getServiceOrder();
@@ -251,6 +252,12 @@ public class ServiceOrderItemService {
                 inventoryService.cancelReservation(serviceOrder, updated, previousQuantity,
                         "Cancelamento de reserva ao remover controle de estoque");
             }
+            return;
+        }
+
+        if (currentRequiresStock && inventoryItemChanged) {
+            inventoryService.reserveStock(serviceOrder, updated, currentQuantity,
+                    "Reserva ao alterar item de estoque");
             return;
         }
 

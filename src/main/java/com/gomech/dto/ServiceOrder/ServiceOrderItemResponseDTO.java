@@ -15,7 +15,11 @@ public class ServiceOrderItemResponseDTO {
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
     private String productCode;
-    private Long stockProductId;
+    private Long partId;
+    private String partName;
+    private String partSku;
+    private Long inventoryItemId;
+    private String inventoryLocation;
     private Boolean requiresStock;
     private Boolean stockReserved;
     private Boolean applied;
