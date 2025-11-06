@@ -35,7 +35,6 @@ public class SecurityConfig {
                     CorsConfiguration corsConfig = new CorsConfiguration();
                     corsConfig.setAllowedOrigins(List.of(
                             "http://localhost:3000",
-                            "http://127.0.0.1:3000",
                             "https://app.go-mech.com"
                     ));
                     corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -48,6 +47,9 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh", "/auth/register").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/parts/**", "/inventory/items", "/inventory/movements/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/parts/**", "/inventory/items/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/parts/**", "/inventory/items/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
