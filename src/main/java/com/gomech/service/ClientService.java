@@ -4,12 +4,12 @@ import com.gomech.dto.Clients.ClientCreateDTO;
 import com.gomech.dto.Clients.ClientUpdateDTO;
 import com.gomech.model.Client;
 import com.gomech.repository.ClientRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +30,9 @@ public class ClientService {
     @Autowired
     private ClientRepository repository;
 
+    @Autowired
+    private AuditService auditService;
+
     public Client save(ClientCreateDTO dto) {
         Client client = new Client();
         client.setName(dto.name());
@@ -40,7 +43,10 @@ public class ClientService {
         client.setBirthDate(dto.birthDate());
         client.setObservations(dto.observations());
 
-        return repository.save(client);
+        Client saved = repository.save(client);
+        auditService.logEntityAction("CREATE", "CLIENT", saved.getId(),
+                "Cliente cadastrado: " + saved.getName());
+        return saved;
     }
 
     public List<Client> listAll() {
@@ -53,6 +59,8 @@ public class ClientService {
 
     public void delete(Long id) {
         repository.deleteById(id);
+        auditService.logEntityAction("DELETE", "CLIENT", id,
+                "Cliente removido");
     }
 
     public Client update(Long id, ClientUpdateDTO updatedClient) {
@@ -65,11 +73,17 @@ public class ClientService {
         client.setAddress(updatedClient.address());
         client.setBirthDate(updatedClient.birthDate());
         client.setObservations(updatedClient.observations());
-        return repository.save(client);
+        Client saved = repository.save(client);
+        auditService.logEntityAction("UPDATE", "CLIENT", saved.getId(),
+                "Cliente atualizado: " + saved.getName());
+        return saved;
     }
 
     public List<Client> saveAll(List<Client> clients) {
-        return repository.saveAll(clients);
+        List<Client> savedClients = repository.saveAll(clients);
+        savedClients.forEach(client -> auditService.logEntityAction("CREATE", "CLIENT", client.getId(),
+                "Cliente cadastrado em lote: " + client.getName()));
+        return savedClients;
     }
 
     public List<Client> saveFromFile(MultipartFile file) {
@@ -98,7 +112,10 @@ public class ClientService {
         } catch (IOException e) {
             throw new RuntimeException("Falha ao processar arquivo", e);
         }
-        return repository.saveAll(clients);
+        List<Client> saved = repository.saveAll(clients);
+        saved.forEach(client -> auditService.logEntityAction("CREATE", "CLIENT", client.getId(),
+                "Cliente cadastrado via arquivo: " + client.getName()));
+        return saved;
     }
 
     private List<Client> saveFromExcel(MultipartFile file) {
@@ -127,7 +144,10 @@ public class ClientService {
         } catch (IOException e) {
             throw new RuntimeException("Falha ao ler planilha", e);
         }
-        return repository.saveAll(clients);
+        List<Client> saved = repository.saveAll(clients);
+        saved.forEach(client -> auditService.logEntityAction("CREATE", "CLIENT", client.getId(),
+                "Cliente cadastrado via planilha: " + client.getName()));
+        return saved;
     }
 
     private Client buildClientFromMap(java.util.function.Function<String, String> getter) {

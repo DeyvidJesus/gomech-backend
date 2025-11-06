@@ -35,17 +35,20 @@ public class InventoryService {
     private final PartRepository partRepository;
     private final ServiceOrderItemRepository serviceOrderItemRepository;
     private final InventoryAlertService inventoryAlertService;
+    private final AuditService auditService;
 
     public InventoryService(InventoryItemRepository inventoryItemRepository,
                             InventoryMovementRepository inventoryMovementRepository,
                             PartRepository partRepository,
                             ServiceOrderItemRepository serviceOrderItemRepository,
-                            InventoryAlertService inventoryAlertService) {
+                            InventoryAlertService inventoryAlertService,
+                            AuditService auditService) {
         this.inventoryItemRepository = inventoryItemRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.partRepository = partRepository;
         this.serviceOrderItemRepository = serviceOrderItemRepository;
         this.inventoryAlertService = inventoryAlertService;
+        this.auditService = auditService;
     }
 
     public InventoryItemResponseDTO createItem(InventoryItemCreateDTO dto) {
@@ -67,6 +70,8 @@ public class InventoryService {
         item.setSalePrice(dto.salePrice());
 
         InventoryItem saved = inventoryItemRepository.save(item);
+        auditService.logEntityAction("CREATE", "INVENTORY_ITEM", saved.getId(),
+                "Item criado para peça " + part.getId());
         inventoryAlertService.onStockLevelChanged(saved);
         return InventoryItemResponseDTO.fromEntity(saved);
     }
@@ -87,14 +92,17 @@ public class InventoryService {
             item.setSalePrice(dto.salePrice());
         }
 
-        return InventoryItemResponseDTO.fromEntity(inventoryItemRepository.save(item));
+        InventoryItem saved = inventoryItemRepository.save(item);
+        auditService.logEntityAction("UPDATE", "INVENTORY_ITEM", saved.getId(),
+                "Item atualizado para peça " + saved.getPart().getId());
+        return InventoryItemResponseDTO.fromEntity(saved);
     }
 
     public void deleteItem(Long id) {
-        if (!inventoryItemRepository.existsById(id)) {
-            throw new IllegalArgumentException("Item de estoque não encontrado");
-        }
+        InventoryItem item = findInventoryItemById(id);
         inventoryItemRepository.deleteById(id);
+        auditService.logEntityAction("DELETE", "INVENTORY_ITEM", id,
+                "Item removido para peça " + item.getPart().getId());
     }
 
     @Transactional(readOnly = true)
@@ -198,6 +206,8 @@ public class InventoryService {
 
         InventoryMovement movement = recordMovement(savedItem, part, null, null, InventoryMovementType.IN, quantity, referenceCode, notes);
         inventoryAlertService.onStockLevelChanged(savedItem);
+        auditService.logEntityAction(movement.getMovementType().name(), "INVENTORY_MOVEMENT", movement.getId(),
+                String.format("itemId=%d;quantity=%d;type=ENTRY", savedItem.getId(), quantity));
         return movement;
     }
 
@@ -224,6 +234,8 @@ public class InventoryService {
                 InventoryMovementType.ADJUSTMENT, quantity, serviceOrder.getOrderNumber(),
                 defaultNotes(notes, "Reserva de estoque"));
         inventoryAlertService.onStockLevelChanged(savedItem);
+        auditService.logEntityAction(movement.getMovementType().name(), "INVENTORY_MOVEMENT", movement.getId(),
+                String.format("itemId=%d;quantity=%d;type=RESERVATION", savedItem.getId(), quantity));
         return movement;
     }
 
@@ -290,6 +302,8 @@ public class InventoryService {
                 InventoryMovementType.ADJUSTMENT, quantity, serviceOrder.getOrderNumber(),
                 defaultNotes(notes, "Cancelamento de reserva"));
         inventoryAlertService.onStockLevelChanged(savedItem);
+        auditService.logEntityAction(movement.getMovementType().name(), "INVENTORY_MOVEMENT", movement.getId(),
+                String.format("itemId=%d;quantity=%d;type=CANCELLATION", savedItem.getId(), quantity));
         return movement;
     }
 
@@ -314,6 +328,8 @@ public class InventoryService {
                 InventoryMovementType.IN, quantity, serviceOrder.getOrderNumber(),
                 defaultNotes(notes, "Devolução ao estoque"));
         inventoryAlertService.onStockLevelChanged(savedItem);
+        auditService.logEntityAction(movement.getMovementType().name(), "INVENTORY_MOVEMENT", movement.getId(),
+                String.format("itemId=%d;quantity=%d;type=RETURN", savedItem.getId(), quantity));
         return movement;
     }
 

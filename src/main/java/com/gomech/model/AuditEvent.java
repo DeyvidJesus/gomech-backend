@@ -37,6 +37,9 @@ public class AuditEvent {
     @Column(name = "user_role", nullable = false)
     private String userRole;
 
+    @Column(name = "entity_id")
+    private Long entityId;
+
     @Column(name = "occurred_at", nullable = false)
     private LocalDateTime occurredAt;
 
@@ -54,6 +57,7 @@ public class AuditEvent {
                       String userEmail,
                       String moduleName,
                       String userRole,
+                      Long entityId,
                       LocalDateTime occurredAt,
                       String payload,
                       String eventHash,
@@ -63,6 +67,7 @@ public class AuditEvent {
         this.userEmail = userEmail;
         this.moduleName = moduleName;
         this.userRole = userRole;
+        this.entityId = entityId;
         this.occurredAt = occurredAt;
         this.payload = payload;
         this.eventHash = eventHash;

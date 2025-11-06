@@ -34,7 +34,8 @@ public class BackupScheduler {
                 "infraestrutura",
                 "SYSTEM",
                 java.time.LocalDateTime.now(),
-                payload
+                payload,
+                null
         );
         auditService.registerEvent(request);
     }

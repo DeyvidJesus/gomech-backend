@@ -11,6 +11,7 @@ public record AuditEventRequest(
         @NotBlank String moduleName,
         @NotBlank String userRole,
         LocalDateTime occurredAt,
-        String metadata
+        String metadata,
+        Long entityId
 ) {
 }

@@ -56,7 +56,10 @@ public class PartService {
 
         PartMapper.updateEntity(existing, updates);
 
-        return PartResponseDTO.fromEntity(partRepository.save(existing));
+        Part saved = partRepository.save(existing);
+        auditService.logEntityAction("UPDATE", "PART", saved.getId(),
+                "Peça atualizada: " + saved.getName());
+        return PartResponseDTO.fromEntity(saved);
     }
 
     @Transactional(readOnly = true)
@@ -77,6 +80,8 @@ public class PartService {
             throw new IllegalArgumentException("Peça não encontrada");
         }
         partRepository.deleteById(id);
+        auditService.logEntityAction("DELETE", "PART", id,
+                "Peça removida");
     }
 
     private void registerInitialStockIfRequested(Part part, PartCreateDTO dto) {
