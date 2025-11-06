@@ -17,14 +17,19 @@ import java.util.Optional;
 public class PartService {
 
     private final PartRepository partRepository;
+    private final AuditService auditService;
 
-    public PartService(PartRepository partRepository) {
+    public PartService(PartRepository partRepository, AuditService auditService) {
         this.partRepository = partRepository;
+        this.auditService = auditService;
     }
 
     public PartResponseDTO register(PartCreateDTO dto) {
         Part part = PartMapper.toEntity(dto);
-        return PartResponseDTO.fromEntity(partRepository.save(part));
+        Part saved = partRepository.save(part);
+        auditService.logEntityAction("CREATE", "PART", saved.getId(),
+                "Peça cadastrada: " + saved.getName());
+        return PartResponseDTO.fromEntity(saved);
     }
 
     public PartResponseDTO update(Long id, PartUpdateDTO updates) {
@@ -33,7 +38,10 @@ public class PartService {
 
         PartMapper.updateEntity(existing, updates);
 
-        return PartResponseDTO.fromEntity(partRepository.save(existing));
+        Part saved = partRepository.save(existing);
+        auditService.logEntityAction("UPDATE", "PART", saved.getId(),
+                "Peça atualizada: " + saved.getName());
+        return PartResponseDTO.fromEntity(saved);
     }
 
     @Transactional(readOnly = true)
@@ -54,5 +62,7 @@ public class PartService {
             throw new IllegalArgumentException("Peça não encontrada");
         }
         partRepository.deleteById(id);
+        auditService.logEntityAction("DELETE", "PART", id,
+                "Peça removida");
     }
 }

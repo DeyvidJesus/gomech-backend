@@ -32,9 +32,12 @@ import java.util.*;
 public class VehicleService {
     @Autowired
     private VehicleRepository repository;
-    
+
     @Autowired
     private ClientRepository clientRepository;
+
+    @Autowired
+    private AuditService auditService;
 
     public VehicleResponseDTO save(VehicleCreateDTO dto) {
         Client client = clientRepository.findById(dto.clientId())
@@ -51,7 +54,10 @@ public class VehicleService {
         vehicle.setObservations(dto.observations());
         vehicle.setManufactureDate(dto.manufactureDate());
 
-        return VehicleResponseDTO.fromEntity(repository.save(vehicle));
+        Vehicle saved = repository.save(vehicle);
+        auditService.logEntityAction("CREATE", "VEHICLE", saved.getId(),
+                "Veículo cadastrado: " + saved.getLicensePlate());
+        return VehicleResponseDTO.fromEntity(saved);
     }
 
     public List<VehicleResponseDTO> listAll() {
@@ -67,6 +73,8 @@ public class VehicleService {
 
     public void delete(Long id) {
         repository.deleteById(id);
+        auditService.logEntityAction("DELETE", "VEHICLE", id,
+                "Veículo removido");
     }
 
     public VehicleResponseDTO update(Long id, VehicleUpdateDTO dto) {
@@ -88,7 +96,10 @@ public class VehicleService {
             vehicle.setClient(client);
         }
 
-        return VehicleResponseDTO.fromEntity(repository.save(vehicle));
+        Vehicle saved = repository.save(vehicle);
+        auditService.logEntityAction("UPDATE", "VEHICLE", saved.getId(),
+                "Veículo atualizado: " + saved.getLicensePlate());
+        return VehicleResponseDTO.fromEntity(saved);
     }
 
     public List<VehicleResponseDTO> saveFromFile(MultipartFile file) {
@@ -120,7 +131,10 @@ public class VehicleService {
         } catch (IOException e) {
             throw new RuntimeException("Falha ao processar arquivo", e);
         }
-        return repository.saveAll(vehicles);
+        List<Vehicle> saved = repository.saveAll(vehicles);
+        saved.forEach(vehicle -> auditService.logEntityAction("CREATE", "VEHICLE", vehicle.getId(),
+                "Veículo cadastrado via arquivo: " + vehicle.getLicensePlate()));
+        return saved;
     }
 
     private List<Vehicle> saveFromExcel(MultipartFile file) {
@@ -149,7 +163,10 @@ public class VehicleService {
         } catch (IOException e) {
             throw new RuntimeException("Falha ao ler planilha", e);
         }
-        return repository.saveAll(vehicles);
+        List<Vehicle> saved = repository.saveAll(vehicles);
+        saved.forEach(vehicle -> auditService.logEntityAction("CREATE", "VEHICLE", vehicle.getId(),
+                "Veículo cadastrado via planilha: " + vehicle.getLicensePlate()));
+        return saved;
     }
 
     private Vehicle buildVehicleFromMap(java.util.function.Function<String, String> getter) {
