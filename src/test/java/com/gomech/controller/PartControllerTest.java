@@ -64,7 +64,8 @@ class PartControllerTest {
     @WithMockUser(roles = "ADMIN")
     void shouldCreatePartWhenAdmin() throws Exception {
         PartCreateDTO request = new PartCreateDTO("Filtro de Óleo", "FLT-001", "ACME", "Filtro premium",
-                new BigDecimal("30.00"), new BigDecimal("55.00"), true);
+                new BigDecimal("30.00"), new BigDecimal("55.00"), Boolean.TRUE,
+                null, null, null, null, null, null, null, null);
         PartResponseDTO response = new PartResponseDTO(1L, request.name(), request.sku(), request.manufacturer(),
                 request.description(), request.unitCost(), request.unitPrice(), request.active(),
                 LocalDateTime.now(), LocalDateTime.now());
@@ -83,7 +84,8 @@ class PartControllerTest {
     @WithMockUser(roles = "USER")
     void shouldForbidPartCreationForNonAdmin() throws Exception {
         PartCreateDTO request = new PartCreateDTO("Pastilha", "PST-01", null, null,
-                new BigDecimal("10.00"), new BigDecimal("15.00"), true);
+                new BigDecimal("10.00"), new BigDecimal("15.00"), Boolean.TRUE,
+                null, null, null, null, null, null, null, null);
 
         mockMvc.perform(post("/parts")
                         .contentType(MediaType.APPLICATION_JSON)

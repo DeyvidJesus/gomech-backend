@@ -1,5 +1,6 @@
 package com.gomech.service;
 
+import com.gomech.domain.InventoryItem;
 import com.gomech.dto.ServiceOrder.ServiceOrderItemCreateDTO;
 import com.gomech.dto.ServiceOrder.ServiceOrderItemResponseDTO;
 import com.gomech.model.ServiceOrder;
@@ -48,8 +49,10 @@ public class ServiceOrderItemService {
         logger.info("Service Order To Be Saved: {}", serviceOrder.toString());
 
         if (Boolean.TRUE.equals(saved.getRequiresStock())) {
-            inventoryService.reserveStock(serviceOrder, saved, saved.getQuantity(),
-                    "Reserva automática ao adicionar item");
+            saved.apply();
+            inventoryService.consumeDirect(serviceOrder, saved, saved.getQuantity(),
+                    "Consumo automático ao adicionar item");
+            saved = itemRepository.save(saved);
         }
 
         // Recalcular custos da OS
@@ -81,20 +84,17 @@ public class ServiceOrderItemService {
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
         boolean previousRequiresStock = Boolean.TRUE.equals(item.getRequiresStock());
+        boolean wasApplied = Boolean.TRUE.equals(item.getApplied());
         int previousQuantity = item.getQuantity();
-        Long previousInventoryItemId = item.getInventoryItem() != null ? item.getInventoryItem().getId() : null;
+        InventoryItem previousInventoryItem = item.getInventoryItem();
+        Long previousInventoryItemId = previousInventoryItem != null ? previousInventoryItem.getId() : null;
         Long newInventoryItemId = dto.getInventoryItemId();
         boolean inventoryItemWillChange = newInventoryItemId != null && !Objects.equals(previousInventoryItemId, newInventoryItemId);
-
-        if (inventoryItemWillChange && previousRequiresStock) {
-            handleInventoryOnDelete(item);
-            item.setInventoryItem(null);
-        }
 
         serviceOrderItemAssembler.update(item, dto);
         ServiceOrderItem updated = itemRepository.save(item);
 
-        adjustInventoryOnUpdate(updated, previousRequiresStock, previousQuantity, inventoryItemWillChange);
+        adjustInventoryOnUpdate(updated, previousRequiresStock, wasApplied, previousQuantity, previousInventoryItem, inventoryItemWillChange);
 
         if (!Boolean.TRUE.equals(updated.getRequiresStock())) {
             updated.setInventoryItem(null);
@@ -127,7 +127,10 @@ public class ServiceOrderItemService {
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
         if (Boolean.TRUE.equals(item.getRequiresStock())) {
-            inventoryService.consumeStock(item.getServiceOrder(), item, item.getQuantity(),
+            if (Boolean.TRUE.equals(item.getApplied())) {
+                return convertToResponseDTO(item);
+            }
+            inventoryService.consumeDirect(item.getServiceOrder(), item, item.getQuantity(),
                     "Baixa por aplicação de item");
         }
 
@@ -146,7 +149,7 @@ public class ServiceOrderItemService {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
-        if (Boolean.TRUE.equals(item.getRequiresStock())) {
+        if (Boolean.TRUE.equals(item.getRequiresStock()) && Boolean.TRUE.equals(item.getApplied())) {
             inventoryService.returnToStock(item.getServiceOrder(), item, item.getQuantity(),
                     "Devolução por desaplicação de item");
         }
@@ -175,17 +178,18 @@ public class ServiceOrderItemService {
                 .collect(Collectors.toList());
     }
 
-    public ServiceOrderItemResponseDTO reserveStock(Long id) {
+    public ServiceOrderItemResponseDTO consumeStock(Long id) {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
-        inventoryService.reserveStock(item.getServiceOrder(), item, item.getQuantity(),
-                "Reserva manual de item");
+        item.apply();
+        inventoryService.consumeDirect(item.getServiceOrder(), item, item.getQuantity(),
+                "Consumo manual de estoque");
         ServiceOrderItem updated = itemRepository.save(item);
         return convertToResponseDTO(updated);
     }
 
-    public ServiceOrderItemResponseDTO releaseStock(Long id) {
+    public ServiceOrderItemResponseDTO returnStock(Long id) {
         ServiceOrderItem item = itemRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
@@ -193,9 +197,6 @@ public class ServiceOrderItemService {
             inventoryService.returnToStock(item.getServiceOrder(), item, item.getQuantity(),
                     "Devolução manual de item aplicado");
             item.unapply();
-        } else {
-            inventoryService.cancelReservation(item.getServiceOrder(), item, item.getQuantity(),
-                    "Liberação manual de reserva");
         }
 
         ServiceOrderItem updated = itemRepository.save(item);
@@ -230,52 +231,55 @@ public class ServiceOrderItemService {
     }
 
     private void adjustInventoryOnUpdate(ServiceOrderItem updated,
-                                        boolean previousRequiresStock,
-                                        int previousQuantity,
-                                        boolean inventoryItemChanged) {
+                                         boolean previousRequiresStock,
+                                         boolean wasApplied,
+                                         int previousQuantity,
+                                         InventoryItem previousInventoryItem,
+                                         boolean inventoryItemChanged) {
         boolean currentRequiresStock = Boolean.TRUE.equals(updated.getRequiresStock());
-        int currentQuantity = updated.getQuantity();
         ServiceOrder serviceOrder = updated.getServiceOrder();
 
-        if (currentRequiresStock && !previousRequiresStock) {
-            inventoryService.reserveStock(serviceOrder, updated, currentQuantity,
-                    "Reserva ao atualizar item para exigir estoque");
+        if (!previousRequiresStock && currentRequiresStock && Boolean.TRUE.equals(updated.getApplied())) {
+            inventoryService.consumeDirect(serviceOrder, updated, updated.getQuantity(),
+                    "Consumo ao atualizar item para exigir estoque");
             return;
         }
 
-        if (!currentRequiresStock && previousRequiresStock) {
-            if (Boolean.TRUE.equals(updated.getApplied())) {
+        if (previousRequiresStock && !currentRequiresStock) {
+            if (wasApplied && previousInventoryItem != null) {
+                InventoryItem newInventoryItem = updated.getInventoryItem();
+                updated.setInventoryItem(previousInventoryItem);
                 inventoryService.returnToStock(serviceOrder, updated, previousQuantity,
-                        "Devolução ao remover controle de estoque de item aplicado");
+                        "Devolução ao remover controle de estoque");
                 updated.unapply();
-            } else if (Boolean.TRUE.equals(updated.getStockReserved())) {
-                inventoryService.cancelReservation(serviceOrder, updated, previousQuantity,
-                        "Cancelamento de reserva ao remover controle de estoque");
+                updated.setInventoryItem(newInventoryItem);
+                itemRepository.save(updated);
             }
             return;
         }
 
-        if (currentRequiresStock && inventoryItemChanged) {
-            inventoryService.reserveStock(serviceOrder, updated, currentQuantity,
-                    "Reserva ao alterar item de estoque");
+        if (!currentRequiresStock || !wasApplied || previousInventoryItem == null) {
             return;
         }
 
-        if (currentRequiresStock) {
-            int difference = currentQuantity - previousQuantity;
-            if (difference > 0) {
-                inventoryService.reserveStock(serviceOrder, updated, difference,
-                        "Reserva adicional por aumento de quantidade");
-            } else if (difference < 0) {
-                int release = Math.abs(difference);
-                if (Boolean.TRUE.equals(updated.getApplied())) {
-                    inventoryService.returnToStock(serviceOrder, updated, release,
-                            "Devolução parcial por redução de quantidade aplicada");
-                } else {
-                    inventoryService.cancelReservation(serviceOrder, updated, release,
-                            "Cancelamento parcial de reserva por redução de quantidade");
-                }
-            }
+        if (inventoryItemChanged) {
+            InventoryItem newInventoryItem = updated.getInventoryItem();
+            updated.setInventoryItem(previousInventoryItem);
+            inventoryService.returnToStock(serviceOrder, updated, previousQuantity,
+                    "Devolução por alteração de item de estoque");
+            updated.setInventoryItem(newInventoryItem);
+            inventoryService.consumeDirect(serviceOrder, updated, updated.getQuantity(),
+                    "Consumo por alteração de item de estoque");
+            return;
+        }
+
+        int difference = updated.getQuantity() - previousQuantity;
+        if (difference > 0) {
+            inventoryService.consumeDirect(serviceOrder, updated, difference,
+                    "Consumo adicional por aumento de quantidade");
+        } else if (difference < 0) {
+            inventoryService.returnToStock(serviceOrder, updated, Math.abs(difference),
+                    "Devolução parcial por redução de quantidade");
         }
     }
 

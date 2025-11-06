@@ -124,6 +124,42 @@ curl -X POST "http://localhost:8080/inventory/movements/reservations" \
 curl -X GET "http://localhost:8080/inventory/reports/critical-parts" \
   -H "Authorization: Bearer <token_admin>"
 ```
+
+## 🔧 Peças e Ordens de Serviço Integradas
+
+### Cadastro de Peça com Vinculação à OS
+```bash
+curl -X POST "http://localhost:8080/parts" \
+  -H "Authorization: Bearer <token_admin>" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "name": "Filtro de Ar",
+        "sku": "FLT-001",
+        "manufacturer": "OEM",
+        "description": "Filtro padrão",
+        "unitCost": 45.0,
+        "unitPrice": 90.0,
+        "active": true,
+        "stockLocation": "ALMOX-01",
+        "stockQuantity": 5,
+        "serviceOrderId": 123,
+        "inventoryItemId": 77,
+        "serviceQuantity": 2
+      }'
+```
+No exemplo acima a peça é registrada, reforça o estoque na localização informada e consome duas unidades diretamente para a OS `123`.
+
+### Consumo Manual de Peça em Ordem de Serviço
+```bash
+curl -X PUT "http://localhost:8080/service-orders/items/456/consume-stock" \
+  -H "Authorization: Bearer <token_admin>"
+```
+
+### Devolução Manual de Peça em Ordem de Serviço
+```bash
+curl -X PUT "http://localhost:8080/service-orders/items/456/return-stock" \
+  -H "Authorization: Bearer <token_admin>"
+```
 Resposta:
 ```json
 [

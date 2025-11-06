@@ -152,21 +152,21 @@ public class ServiceOrderController {
     }
 
     // Endpoints para controle de estoque (preparação para módulo futuro)
-    @PutMapping("/items/{itemId}/reserve-stock")
-    public ResponseEntity<ServiceOrderItemResponseDTO> reserveStock(@PathVariable Long itemId) {
+    @PutMapping("/items/{itemId}/consume-stock")
+    public ResponseEntity<ServiceOrderItemResponseDTO> consumeStock(@PathVariable Long itemId) {
         try {
-            ServiceOrderItemResponseDTO reserved = itemService.reserveStock(itemId);
-            return ResponseEntity.ok(reserved);
+            ServiceOrderItemResponseDTO consumed = itemService.consumeStock(itemId);
+            return ResponseEntity.ok(consumed);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @PutMapping("/items/{itemId}/release-stock")
-    public ResponseEntity<ServiceOrderItemResponseDTO> releaseStock(@PathVariable Long itemId) {
+    @PutMapping("/items/{itemId}/return-stock")
+    public ResponseEntity<ServiceOrderItemResponseDTO> returnStock(@PathVariable Long itemId) {
         try {
-            ServiceOrderItemResponseDTO released = itemService.releaseStock(itemId);
-            return ResponseEntity.ok(released);
+            ServiceOrderItemResponseDTO returned = itemService.returnStock(itemId);
+            return ResponseEntity.ok(returned);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

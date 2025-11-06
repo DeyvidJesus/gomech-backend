@@ -257,20 +257,24 @@ public class InventoryService {
         }
 
         inventoryItem.setReservedQuantity(inventoryItem.getReservedQuantity() - quantity);
-        inventoryItem.setQuantity(inventoryItem.getQuantity() - quantity);
-        InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
-
-        serviceOrderItem.setStockReserved(false);
-        serviceOrderItem.setInventoryItem(savedItem);
-        serviceOrderItemRepository.save(serviceOrderItem);
-
-        InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
-                InventoryMovementType.OUT, quantity, serviceOrder.getOrderNumber(),
+        return performConsumption(serviceOrder, serviceOrderItem, inventoryItem, quantity,
                 defaultNotes(notes, "Baixa de estoque"));
-        inventoryAlertService.onStockLevelChanged(savedItem);
-        auditService.logEntityAction(movement.getMovementType().name(), "INVENTORY_MOVEMENT", movement.getId(),
-                String.format("itemId=%d;quantity=%d;type=CONSUMPTION", savedItem.getId(), quantity));
-        return movement;
+    }
+
+    public InventoryMovement consumeDirect(ServiceOrder serviceOrder,
+                                           ServiceOrderItem serviceOrderItem,
+                                           int quantity,
+                                           String notes) {
+        validateServiceOrderItem(serviceOrderItem);
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantidade de baixa deve ser maior que zero");
+        }
+
+        InventoryItem inventoryItem = getInventoryItem(serviceOrderItem);
+        ensureAvailableStock(inventoryItem, quantity);
+
+        return performConsumption(serviceOrder, serviceOrderItem, inventoryItem, quantity,
+                defaultNotes(notes, "Baixa direta de estoque"));
     }
 
     public InventoryMovement cancelReservation(ServiceOrder serviceOrder,
@@ -343,7 +347,8 @@ public class InventoryService {
             }
 
             if (Boolean.TRUE.equals(item.getStockReserved())) {
-                cancelReservation(serviceOrder, item, item.getQuantity(), "Conciliação de estoque - liberação");
+                cancelReservation(serviceOrder, item, item.getQuantity(),
+                        "Conciliação de estoque - liberação");
             }
         }
     }
@@ -424,6 +429,26 @@ public class InventoryService {
 
     private String defaultNotes(String provided, String fallback) {
         return Objects.requireNonNullElse(provided, fallback);
+    }
+
+    private InventoryMovement performConsumption(ServiceOrder serviceOrder,
+                                                 ServiceOrderItem serviceOrderItem,
+                                                 InventoryItem inventoryItem,
+                                                 int quantity,
+                                                 String notes) {
+        inventoryItem.setQuantity(inventoryItem.getQuantity() - quantity);
+        InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
+
+        serviceOrderItem.setStockReserved(false);
+        serviceOrderItem.setInventoryItem(savedItem);
+        serviceOrderItemRepository.save(serviceOrderItem);
+
+        InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
+                InventoryMovementType.OUT, quantity,
+                serviceOrder != null ? serviceOrder.getOrderNumber() : null,
+                notes);
+        inventoryAlertService.onStockLevelChanged(savedItem);
+        return movement;
     }
 
     private InventoryItem findInventoryItemById(Long id) {

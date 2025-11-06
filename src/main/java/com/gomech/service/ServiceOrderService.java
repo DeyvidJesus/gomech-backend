@@ -50,7 +50,7 @@ public class ServiceOrderService {
         }
 
         ServiceOrder saved = serviceOrderRepository.save(serviceOrder);
-        inventoryService.reserveItemsForOrder(saved);
+        autoConsumeItems(saved);
         return convertToResponseDTO(saved);
     }
 
@@ -103,6 +103,25 @@ public class ServiceOrderService {
         return serviceOrderRepository.findByVehicleId(vehicleId).stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    private void autoConsumeItems(ServiceOrder serviceOrder) {
+        boolean consumedAny = false;
+        for (ServiceOrderItem item : serviceOrder.getItems()) {
+            if (!Boolean.TRUE.equals(item.getRequiresStock())) {
+                continue;
+            }
+
+            item.apply();
+            inventoryService.consumeDirect(serviceOrder, item, item.getQuantity(),
+                    "Consumo automático ao criar ordem de serviço");
+            consumedAny = true;
+        }
+
+        if (consumedAny) {
+            serviceOrder.calculateTotalCost();
+            serviceOrderRepository.save(serviceOrder);
+        }
     }
 
     public ServiceOrderResponseDTO update(Long id, ServiceOrderUpdateDTO dto) {

@@ -111,6 +111,7 @@ class InventoryAlertAndReportIntegrationTest {
         serviceOrderItem.setQuantity(4);
         serviceOrderItem.setUnitPrice(new BigDecimal("65.00"));
         serviceOrderItem.setRequiresStock(true);
+        serviceOrderItem.setInventoryItem(savedInventoryItem);
         ServiceOrderItem savedServiceOrderItem = serviceOrderItemRepository.save(serviceOrderItem);
 
         inventoryService.reserveStock(new StockReservationRequestDTO(savedServiceOrderItem.getId(), 4, "Reserva automática"));
