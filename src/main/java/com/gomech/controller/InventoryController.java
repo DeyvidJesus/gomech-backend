@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -64,6 +65,7 @@ public class InventoryController {
 
     @Operation(summary = "Cria um novo item de estoque")
     @PostMapping("/items")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<InventoryItemResponseDTO> createItem(@Valid @RequestBody InventoryItemCreateDTO dto) {
         try {
             InventoryItemResponseDTO response = inventoryService.createItem(dto);
@@ -75,6 +77,7 @@ public class InventoryController {
 
     @Operation(summary = "Atualiza um item de estoque existente")
     @PutMapping("/items/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<InventoryItemResponseDTO> updateItem(@PathVariable Long id,
                                                                @Valid @RequestBody InventoryItemUpdateDTO dto) {
         try {
@@ -86,6 +89,7 @@ public class InventoryController {
 
     @Operation(summary = "Remove um item de estoque")
     @DeleteMapping("/items/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
         try {
             inventoryService.deleteItem(id);
