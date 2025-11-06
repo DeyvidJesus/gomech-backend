@@ -2,6 +2,8 @@ package com.gomech.repository;
 
 import com.gomech.domain.InventoryItem;
 import com.gomech.dto.Inventory.PartAvailabilityDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +15,8 @@ import java.util.Optional;
 @Repository
 public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
     List<InventoryItem> findByPartId(Long partId);
+    
+    Page<InventoryItem> findByPartId(Long partId, Pageable pageable);
 
     Optional<InventoryItem> findByPartIdAndLocation(Long partId, String location);
 

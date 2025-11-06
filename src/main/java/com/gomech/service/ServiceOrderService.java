@@ -4,6 +4,8 @@ import com.gomech.dto.ServiceOrder.*;
 import com.gomech.model.*;
 import com.gomech.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,6 +77,11 @@ public class ServiceOrderService {
         return serviceOrderRepository.findAll().stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Page<ServiceOrderResponseDTO> listAllPaginated(Pageable pageable) {
+        return serviceOrderRepository.findAll(pageable)
+                .map(this::convertToResponseDTO);
     }
 
     public Optional<ServiceOrderResponseDTO> getById(Long id) {

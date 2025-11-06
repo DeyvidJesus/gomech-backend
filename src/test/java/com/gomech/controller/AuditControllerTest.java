@@ -55,7 +55,8 @@ class AuditControllerTest {
                 "clientes",
                 "ADMIN",
                 java.time.LocalDateTime.of(2025, 11, 5, 16, 23),
-                "orderId=1"
+                "orderId=1",
+                34L  // entityId
         );
 
         mockMvc.perform(post("/audit/event")
@@ -83,7 +84,8 @@ class AuditControllerTest {
                 "clientes",
                 "ADMIN",
                 java.time.LocalDateTime.now().minusDays(1),
-                "{}"
+                "{}",
+                1L  // entityId
         );
 
         auditEventRepository.deleteAll();

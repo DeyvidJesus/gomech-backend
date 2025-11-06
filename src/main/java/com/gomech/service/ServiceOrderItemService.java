@@ -110,16 +110,48 @@ public class ServiceOrderItemService {
     }
 
     public void deleteItem(Long id) {
+        logger.info("=== SERVICE: Iniciando deleção do item {} ===", id);
+        
         ServiceOrderItem item = itemRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Item não encontrado"));
+            .orElseThrow(() -> {
+                logger.error("=== SERVICE: Item {} não encontrado ===", id);
+                return new RuntimeException("Item não encontrado com ID: " + id);
+            });
+        
+        logger.info("=== SERVICE: Item encontrado - Descrição: {}, Applied: {}, RequiresStock: {} ===", 
+            item.getDescription(), item.getApplied(), item.getRequiresStock());
         
         ServiceOrder serviceOrder = item.getServiceOrder();
-        handleInventoryOnDelete(item);
-        itemRepository.deleteById(id);
+        logger.info("=== SERVICE: OS associada - ID: {}, Number: {} ===", 
+            serviceOrder.getId(), serviceOrder.getOrderNumber());
         
-        // Recalcular custos da OS
-        serviceOrder.calculateTotalCost();
-        serviceOrderRepository.save(serviceOrder);
+        try {
+            handleInventoryOnDelete(item);
+            logger.info("=== SERVICE: Inventário tratado com sucesso ===");
+        } catch (Exception e) {
+            logger.error("=== SERVICE: Erro ao tratar inventário ===", e);
+            throw new RuntimeException("Erro ao processar estoque: " + e.getMessage(), e);
+        }
+        
+        try {
+            itemRepository.deleteById(id);
+            logger.info("=== SERVICE: Item deletado do banco com sucesso ===");
+        } catch (Exception e) {
+            logger.error("=== SERVICE: Erro ao deletar do banco ===", e);
+            throw new RuntimeException("Erro ao deletar item do banco: " + e.getMessage(), e);
+        }
+        
+        try {
+            // Recalcular custos da OS
+            serviceOrder.calculateTotalCost();
+            serviceOrderRepository.save(serviceOrder);
+            logger.info("=== SERVICE: Custos da OS recalculados com sucesso ===");
+        } catch (Exception e) {
+            logger.error("=== SERVICE: Erro ao recalcular custos da OS ===", e);
+            throw new RuntimeException("Erro ao recalcular custos da OS: " + e.getMessage(), e);
+        }
+        
+        logger.info("=== SERVICE: Deleção concluída com sucesso ===");
     }
 
     public ServiceOrderItemResponseDTO applyItem(Long id) {
@@ -284,18 +316,42 @@ public class ServiceOrderItemService {
     }
 
     private void handleInventoryOnDelete(ServiceOrderItem item) {
+        logger.info("=== handleInventoryOnDelete: Iniciando - RequiresStock: {} ===", item.getRequiresStock());
+        
         if (!Boolean.TRUE.equals(item.getRequiresStock())) {
+            logger.info("=== handleInventoryOnDelete: Item não requer estoque, pulando ===");
             return;
         }
 
         ServiceOrder serviceOrder = item.getServiceOrder();
+        logger.info("=== handleInventoryOnDelete: Applied: {}, StockReserved: {} ===", 
+            item.getApplied(), item.getStockReserved());
+        
         if (Boolean.TRUE.equals(item.getApplied())) {
-            inventoryService.returnToStock(serviceOrder, item, item.getQuantity(),
-                    "Devolução por remoção de item aplicado");
-            item.unapply();
+            logger.info("=== handleInventoryOnDelete: Devolvendo ao estoque - Quantidade: {} ===", item.getQuantity());
+            try {
+                inventoryService.returnToStock(serviceOrder, item, item.getQuantity(),
+                        "Devolução por remoção de item aplicado");
+                item.unapply();
+                logger.info("=== handleInventoryOnDelete: Devolução ao estoque concluída ===");
+            } catch (Exception e) {
+                logger.error("=== handleInventoryOnDelete: Erro ao devolver ao estoque ===", e);
+                throw new RuntimeException("Erro ao devolver item ao estoque: " + e.getMessage(), e);
+            }
         } else if (Boolean.TRUE.equals(item.getStockReserved())) {
-            inventoryService.cancelReservation(serviceOrder, item, item.getQuantity(),
-                    "Cancelamento de reserva por remoção de item");
+            logger.info("=== handleInventoryOnDelete: Cancelando reserva - Quantidade: {} ===", item.getQuantity());
+            try {
+                inventoryService.cancelReservation(serviceOrder, item, item.getQuantity(),
+                        "Cancelamento de reserva por remoção de item");
+                logger.info("=== handleInventoryOnDelete: Cancelamento de reserva concluído ===");
+            } catch (Exception e) {
+                logger.error("=== handleInventoryOnDelete: Erro ao cancelar reserva ===", e);
+                throw new RuntimeException("Erro ao cancelar reserva: " + e.getMessage(), e);
+            }
+        } else {
+            logger.info("=== handleInventoryOnDelete: Item não aplicado e sem reserva, nada a fazer ===");
         }
+        
+        logger.info("=== handleInventoryOnDelete: Finalizado ===");
     }
 }

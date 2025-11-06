@@ -5,6 +5,8 @@ import com.gomech.dto.Clients.ClientUpdateDTO;
 import com.gomech.model.Client;
 import com.gomech.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -51,6 +53,10 @@ public class ClientService {
 
     public List<Client> listAll() {
         return repository.findAll();
+    }
+
+    public Page<Client> listAllPaginated(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     public Optional<Client> getById(Long id) {
@@ -106,8 +112,18 @@ public class ClientService {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
              CSVParser parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader)) {
             for (CSVRecord record : parser) {
-                Client client = buildClientFromMap(record::get);
-                clients.add(client);
+                // Verificar se o registro tem dados mínimos necessários
+                String name = record.get("name");
+                String document = record.get("document");
+                String email = record.get("email");
+                
+                // Só processar se tiver pelo menos nome OU documento OU email
+                if ((name != null && !name.trim().isEmpty()) || 
+                    (document != null && !document.trim().isEmpty()) ||
+                    (email != null && !email.trim().isEmpty())) {
+                    Client client = buildClientFromMap(record::get);
+                    clients.add(client);
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Falha ao processar arquivo", e);
@@ -125,7 +141,14 @@ public class ClientService {
             Sheet sheet = workbook.getSheetAt(0);
             Map<String, Integer> headers = new HashMap<>();
             boolean first = true;
+            
             for (Row row : sheet) {
+                // Pular se a linha for nula
+                if (row == null) {
+                    continue;
+                }
+                
+                // Primeira linha: ler cabeçalhos
                 if (first) {
                     for (Cell cell : row) {
                         headers.put(formatter.formatCellValue(cell).toLowerCase(), cell.getColumnIndex());
@@ -133,17 +156,49 @@ public class ClientService {
                     first = false;
                     continue;
                 }
+                
+                // Verificar se a linha está completamente vazia
+                boolean isEmptyRow = true;
+                for (int i = 0; i < row.getLastCellNum(); i++) {
+                    Cell cell = row.getCell(i);
+                    if (cell != null && cell.getCellType() != org.apache.poi.ss.usermodel.CellType.BLANK) {
+                        String value = formatter.formatCellValue(cell).trim();
+                        if (!value.isEmpty()) {
+                            isEmptyRow = false;
+                            break;
+                        }
+                    }
+                }
+                
+                // Pular linhas vazias
+                if (isEmptyRow) {
+                    continue;
+                }
+                
+                // Processar linha com dados
                 Map<String, String> rowData = new HashMap<>();
                 for (Map.Entry<String, Integer> entry : headers.entrySet()) {
                     Cell cell = row.getCell(entry.getValue());
                     rowData.put(entry.getKey(), formatter.formatCellValue(cell));
                 }
-                Client client = buildClientFromMap(rowData::get);
-                clients.add(client);
+                
+                // Verificar se a linha tem dados mínimos necessários
+                String name = rowData.get("name");
+                String document = rowData.get("document");
+                String email = rowData.get("email");
+                
+                // Só processar se tiver pelo menos nome OU documento OU email
+                if ((name != null && !name.trim().isEmpty()) || 
+                    (document != null && !document.trim().isEmpty()) ||
+                    (email != null && !email.trim().isEmpty())) {
+                    Client client = buildClientFromMap(rowData::get);
+                    clients.add(client);
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Falha ao ler planilha", e);
         }
+        
         List<Client> saved = repository.saveAll(clients);
         saved.forEach(client -> auditService.logEntityAction("CREATE", "CLIENT", client.getId(),
                 "Cliente cadastrado via planilha: " + client.getName()));
@@ -220,6 +275,114 @@ public class ClientService {
             return new ByteArrayInputStream(out.toByteArray());
         } catch (IOException e) {
             throw new RuntimeException("Falha ao gerar planilha", e);
+        }
+    }
+
+    public ByteArrayInputStream generateTemplate(String format) {
+        if (format != null && (format.equalsIgnoreCase("xlsx") || format.equalsIgnoreCase("xls"))) {
+            return generateTemplateExcel();
+        }
+        return generateTemplateCsv();
+    }
+
+    private ByteArrayInputStream generateTemplateCsv() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (CSVPrinter printer = new CSVPrinter(new PrintWriter(out),
+                CSVFormat.DEFAULT.withHeader("name", "document", "phone", "email", "address", "birthDate", "observations"))) {
+            printer.printRecord("João da Silva", "12345678900", "(11) 98765-4321", "joao@email.com", "Rua Exemplo, 123", "1990-01-15", "Cliente VIP");
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao gerar template CSV", e);
+        }
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    private ByteArrayInputStream generateTemplateExcel() {
+        try (Workbook workbook = WorkbookFactory.create(true); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("clientes");
+            
+            // Criar estilos
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.ORANGE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            
+            CellStyle exampleStyle = workbook.createCellStyle();
+            exampleStyle.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+            exampleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            
+            // Cabeçalho
+            Row header = sheet.createRow(0);
+            String[] headers = {"name", "document", "phone", "email", "address", "birthDate", "observations"};
+            String[] headersDesc = {"Nome*", "CPF/CNPJ", "Telefone", "Email", "Endereço", "Data Nascimento", "Observações"};
+            
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = header.createCell(i);
+                cell.setCellValue(headersDesc[i]);
+                cell.setCellStyle(headerStyle);
+                sheet.setColumnWidth(i, 4000);
+            }
+            
+            // Linha de exemplo
+            Row example = sheet.createRow(1);
+            String[] exampleData = {"João da Silva", "12345678900", "(11) 98765-4321", "joao@email.com", "Rua Exemplo, 123", "1990-01-15", "Cliente VIP"};
+            for (int i = 0; i < exampleData.length; i++) {
+                Cell cell = example.createCell(i);
+                cell.setCellValue(exampleData[i]);
+                cell.setCellStyle(exampleStyle);
+            }
+            
+            // Adicionar instruções em uma aba separada
+            Sheet instructionsSheet = workbook.createSheet("Instruções");
+            int rowNum = 0;
+            
+            Row titleRow = instructionsSheet.createRow(rowNum++);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("📋 INSTRUÇÕES PARA IMPORTAÇÃO DE CLIENTES");
+            titleCell.setCellStyle(headerStyle);
+            
+            rowNum++; // linha em branco
+            
+            String[] instructions = {
+                "1. CAMPOS OBRIGATÓRIOS:",
+                "   • name: Nome completo do cliente (mínimo obrigatório: nome OU documento OU email)",
+                "",
+                "2. FORMATO DOS CAMPOS:",
+                "   • name: Texto livre (ex: João da Silva)",
+                "   • document: CPF (11 dígitos) ou CNPJ (14 dígitos) sem pontuação",
+                "   • phone: Formato livre, recomendado (XX) XXXXX-XXXX",
+                "   • email: Email válido (ex: exemplo@email.com)",
+                "   • address: Endereço completo",
+                "   • birthDate: Formato YYYY-MM-DD (ex: 1990-01-15)",
+                "   • observations: Texto livre para observações",
+                "",
+                "3. DICAS IMPORTANTES:",
+                "   • Não altere os nomes das colunas na primeira linha",
+                "   • A linha amarela é apenas um exemplo, pode ser removida",
+                "   • Linhas completamente vazias serão ignoradas",
+                "   • Pelo menos um dos campos (nome, documento ou email) deve estar preenchido",
+                "   • Datas devem estar no formato YYYY-MM-DD",
+                "",
+                "4. APÓS PREENCHER:",
+                "   • Salve o arquivo",
+                "   • Vá para a tela de Clientes",
+                "   • Clique em 'Importar Planilha'",
+                "   • Selecione o arquivo e faça o upload"
+            };
+            
+            for (String instruction : instructions) {
+                Row row = instructionsSheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(instruction);
+            }
+            
+            instructionsSheet.setColumnWidth(0, 20000);
+            
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao gerar template", e);
         }
     }
 }
