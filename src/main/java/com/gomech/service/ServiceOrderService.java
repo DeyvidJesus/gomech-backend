@@ -31,6 +31,9 @@ public class ServiceOrderService {
     @Autowired
     private InventoryService inventoryService;
 
+    @Autowired
+    private ServiceOrderItemAssembler serviceOrderItemAssembler;
+
     public ServiceOrderResponseDTO create(ServiceOrderCreateDTO dto) {
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
                 .orElseThrow(() -> new RuntimeException("Veículo não encontrado"));
@@ -41,8 +44,7 @@ public class ServiceOrderService {
 
         if (dto.getItems() != null && !dto.getItems().isEmpty()) {
             for (ServiceOrderItemCreateDTO itemDto : dto.getItems()) {
-                ServiceOrderItem item = new ServiceOrderItem();
-                getServiceOrderItem(itemDto, item);
+                ServiceOrderItem item = serviceOrderItemAssembler.create(serviceOrder, itemDto);
                 serviceOrder.addItem(item);
             }
         }
@@ -50,17 +52,6 @@ public class ServiceOrderService {
         ServiceOrder saved = serviceOrderRepository.save(serviceOrder);
         inventoryService.reserveItemsForOrder(saved);
         return convertToResponseDTO(saved);
-    }
-
-    static void getServiceOrderItem(ServiceOrderItemCreateDTO itemDto, ServiceOrderItem item) {
-        item.setDescription(itemDto.getDescription());
-        item.setItemType(itemDto.getItemType());
-        item.setQuantity(itemDto.getQuantity());
-        item.setUnitPrice(itemDto.getUnitPrice());
-        item.setProductCode(itemDto.getProductCode());
-        item.setStockProductId(itemDto.getStockProductId());
-        item.setRequiresStock(itemDto.getRequiresStock());
-        item.setObservations(itemDto.getObservations());
     }
 
     private static ServiceOrder getServiceOrder(ServiceOrderCreateDTO dto, Vehicle vehicle, Client client) {
@@ -244,6 +235,15 @@ public class ServiceOrderService {
         dto.setUnitPrice(item.getUnitPrice());
         dto.setTotalPrice(item.getTotalPrice());
         dto.setProductCode(item.getProductCode());
+        if (item.getPart() != null) {
+            dto.setPartId(item.getPart().getId());
+            dto.setPartName(item.getPart().getName());
+            dto.setPartSku(item.getPart().getSku());
+        }
+        if (item.getInventoryItem() != null) {
+            dto.setInventoryItemId(item.getInventoryItem().getId());
+            dto.setInventoryLocation(item.getInventoryItem().getLocation());
+        }
         dto.setRequiresStock(item.getRequiresStock());
         dto.setStockReserved(item.getStockReserved());
         dto.setApplied(item.getApplied());

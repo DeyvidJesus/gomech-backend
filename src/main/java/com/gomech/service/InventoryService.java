@@ -217,6 +217,7 @@ public class InventoryService {
         InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(true);
+        serviceOrderItem.setInventoryItem(savedItem);
         serviceOrderItemRepository.save(serviceOrderItem);
 
         InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
@@ -248,6 +249,7 @@ public class InventoryService {
         InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(false);
+        serviceOrderItem.setInventoryItem(savedItem);
         serviceOrderItemRepository.save(serviceOrderItem);
 
         InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
@@ -275,6 +277,7 @@ public class InventoryService {
         InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(false);
+        serviceOrderItem.setInventoryItem(savedItem);
         serviceOrderItemRepository.save(serviceOrderItem);
 
         InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
@@ -298,6 +301,7 @@ public class InventoryService {
         InventoryItem savedItem = inventoryItemRepository.save(inventoryItem);
 
         serviceOrderItem.setStockReserved(false);
+        serviceOrderItem.setInventoryItem(savedItem);
         serviceOrderItemRepository.save(serviceOrderItem);
 
         InventoryMovement movement = recordMovement(savedItem, savedItem.getPart(), serviceOrder, serviceOrderItem,
@@ -338,13 +342,17 @@ public class InventoryService {
         if (!Boolean.TRUE.equals(item.getRequiresStock())) {
             throw new IllegalArgumentException("Item não requer controle de estoque");
         }
-        if (item.getStockProductId() == null) {
+        if (item.getInventoryItem() == null || item.getInventoryItem().getId() == null) {
             throw new IllegalArgumentException("Item não possui referência de estoque");
         }
     }
 
     private InventoryItem getInventoryItem(ServiceOrderItem serviceOrderItem) {
-        return inventoryItemRepository.findById(serviceOrderItem.getStockProductId())
+        InventoryItem inventoryItem = serviceOrderItem.getInventoryItem();
+        if (inventoryItem == null || inventoryItem.getId() == null) {
+            throw new IllegalArgumentException("Item de estoque não encontrado");
+        }
+        return inventoryItemRepository.findById(inventoryItem.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Item de estoque não encontrado"));
     }
 
