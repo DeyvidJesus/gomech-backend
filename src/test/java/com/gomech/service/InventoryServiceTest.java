@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -97,6 +98,7 @@ class InventoryServiceTest {
         serviceOrderItem.setQuantity(2);
         serviceOrderItem.setUnitPrice(new BigDecimal("55.00"));
         serviceOrderItem.setRequiresStock(true);
+        serviceOrderItem.setInventoryItem(inventoryItem);
 
         when(inventoryItemRepository.findById(anyLong())).thenReturn(Optional.of(inventoryItem));
         when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -171,7 +173,14 @@ class InventoryServiceTest {
         verify(inventoryItemRepository, times(4)).save(any(InventoryItem.class));
         verify(inventoryMovementRepository, times(2)).save(any(InventoryMovement.class));
 
-        assertThat(reservedItem.getStockReserved()).isFalse();
+        ArgumentCaptor<ServiceOrderItem> itemCaptor = ArgumentCaptor.forClass(ServiceOrderItem.class);
+        verify(serviceOrderItemRepository, atLeastOnce()).save(itemCaptor.capture());
+        assertThat(itemCaptor.getAllValues())
+                .anySatisfy(saved -> {
+                    if (saved.getId().equals(reservedItem.getId())) {
+                        assertThat(saved.getStockReserved()).isFalse();
+                    }
+                });
         assertThat(appliedItem.getApplied()).isFalse();
         assertThat(inventoryItem.getReservedQuantity()).isZero();
         assertThat(inventoryItem.getQuantity()).isEqualTo(8);
@@ -186,6 +195,7 @@ class InventoryServiceTest {
         item.setQuantity(quantity);
         item.setUnitPrice(new BigDecimal("42.00"));
         item.setRequiresStock(true);
+        item.setInventoryItem(inventoryItem);
         if (applied) {
             item.apply();
         }

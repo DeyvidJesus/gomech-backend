@@ -75,11 +75,16 @@ Veja implementações em `ClientController`. 【F:src/main/java/com/gomech/contr
 
 | Método | Caminho | Auth | Descrição |
 |--------|---------|------|-----------|
-| POST | `/parts` | ADMIN | Cria peça (`PartCreateDTO`). |
+| POST | `/parts` | ADMIN | Cria peça (`PartCreateDTO`) com opção de direcionar itens ao estoque ou vinculá-los a uma OS existente. |
 | GET | `/parts` | USER | Lista peças (`PartResponseDTO`). |
 | GET | `/parts/{id}` | USER | Consulta peça. |
 | PUT | `/parts/{id}` | ADMIN | Atualiza peça (`PartUpdateDTO`). |
 | DELETE | `/parts/{id}` | ADMIN | Remove peça. |
+
+Ao criar peças é possível informar campos opcionais:
+
+- `serviceOrderId`, `inventoryItemId`, `serviceQuantity` e `serviceUnitPrice` para gerar e aplicar automaticamente itens em uma ordem de serviço específica, consumindo o estoque indicado.
+- `stockLocation`, `stockQuantity`, `stockUnitCost` e `stockSalePrice` para registrar imediatamente a entrada no estoque após o cadastro da peça.
 
 Endpoints documentados no Swagger via `@Operation`. 【F:src/main/java/com/gomech/controller/PartController.java†L21-L65】
 
@@ -132,8 +137,10 @@ Veja a implementação completa em `InventoryController`. 【F:src/main/java/com
 | DELETE | `/service-orders/items/{itemId}` | USER | Remove item. |
 | PUT | `/service-orders/items/{itemId}/apply` | USER | Marca item como aplicado. |
 | PUT | `/service-orders/items/{itemId}/unapply` | USER | Reverte aplicação. |
-| PUT | `/service-orders/items/{itemId}/reserve-stock` | ADMIN | Reserva estoque manual. |
-| PUT | `/service-orders/items/{itemId}/release-stock` | ADMIN | Libera reserva. |
+| PUT | `/service-orders/items/{itemId}/consume-stock` | ADMIN | Consome estoque manualmente para o item. |
+| PUT | `/service-orders/items/{itemId}/return-stock` | ADMIN | Devolve estoque manualmente para o item. |
+
+Itens de ordem de serviço que exigem estoque efetuam baixas automáticas sempre que são criados, aplicados ou vinculados durante o cadastro de peças, registrando o movimento correspondente.
 
 Controlador completo em `ServiceOrderController`. 【F:src/main/java/com/gomech/controller/ServiceOrderController.java†L18-L152】
 
