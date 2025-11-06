@@ -1,12 +1,15 @@
 package com.gomech.controller;
 
+import com.gomech.dto.Analytics.AnalyticsInsightDTO;
 import com.gomech.dto.Analytics.AnalyticsRequestDTO;
 import com.gomech.dto.Analytics.AnalyticsResponseDTO;
 import com.gomech.integration.analytics.AnalyticsRequest;
+import com.gomech.service.AnalyticsInsightService;
 import com.gomech.service.AnalyticsService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
+    private final AnalyticsInsightService analyticsInsightService;
 
-    public AnalyticsController(AnalyticsService analyticsService) {
+    public AnalyticsController(AnalyticsService analyticsService, AnalyticsInsightService analyticsInsightService) {
         this.analyticsService = analyticsService;
+        this.analyticsInsightService = analyticsInsightService;
     }
 
     @PostMapping
@@ -27,5 +32,11 @@ public class AnalyticsController {
     public ResponseEntity<AnalyticsResponseDTO> analyze(@RequestBody @Valid AnalyticsRequestDTO requestDTO) {
         var response = analyticsService.requestAnalytics(new AnalyticsRequest(requestDTO.metric(), requestDTO.payload()));
         return ResponseEntity.ok(new AnalyticsResponseDTO(response.status(), response.data()));
+    }
+
+    @GetMapping("/insights")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<java.util.List<AnalyticsInsightDTO>> insights() {
+        return ResponseEntity.ok(analyticsInsightService.generateInsights());
     }
 }

@@ -99,4 +99,18 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
             """)
     List<PartAvailabilityDTO> findAggregatedAvailabilityByClient(@Param("clientId") Long clientId);
 
+
+    @Query("""
+            SELECT new com.gomech.dto.Analytics.SupplierPriceStats(
+                p.manufacturer,
+                AVG(i.unitCost)
+            )
+            FROM InventoryItem i
+            JOIN i.part p
+            WHERE p.manufacturer IS NOT NULL
+              AND i.unitCost IS NOT NULL
+            GROUP BY p.manufacturer
+            """)
+    List<com.gomech.dto.Analytics.SupplierPriceStats> findAverageCostBySupplier();
+
 }

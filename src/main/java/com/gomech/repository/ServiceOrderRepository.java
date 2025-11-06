@@ -29,4 +29,23 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
 
     @Query("SELECT so FROM ServiceOrder so WHERE so.vehicle.id = :vehicleId ORDER BY so.createdAt DESC")
     List<ServiceOrder> findVehicleHistory(@Param("vehicleId") Long vehicleId);
+
+    @Query("SELECT COUNT(so) FROM ServiceOrder so WHERE so.createdAt BETWEEN :start AND :end")
+    long countCreatedBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT COALESCE(SUM(so.totalCost), 0) FROM ServiceOrder so WHERE so.createdAt BETWEEN :start AND :end")
+    java.math.BigDecimal sumTotalCostBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT new com.gomech.dto.Analytics.ClientServiceGap(
+                so.client.id,
+                so.client.name,
+                so.client.email,
+                MAX(COALESCE(so.actualCompletion, so.createdAt))
+            )
+            FROM ServiceOrder so
+            GROUP BY so.client.id, so.client.name, so.client.email
+            HAVING MAX(COALESCE(so.actualCompletion, so.createdAt)) < :threshold
+            """)
+    List<com.gomech.dto.Analytics.ClientServiceGap> findClientsWithServiceGap(@Param("threshold") LocalDateTime threshold);
 }
