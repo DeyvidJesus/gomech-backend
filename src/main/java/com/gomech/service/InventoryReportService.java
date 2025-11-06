@@ -30,15 +30,20 @@ public class InventoryReportService {
     }
 
     public List<CriticalPartReportDTO> listCriticalParts(String vehicleModel) {
+        String normalizedModel = vehicleModel != null ? vehicleModel.trim() : null;
+        String searchModel = normalizedModel != null && !normalizedModel.isEmpty()
+                ? normalizedModel.toUpperCase()
+                : null;
+
         List<PartAvailabilityDTO> availability = inventoryItemRepository.findAggregatedAvailability();
         Map<Long, List<CriticalPartMovementProjection>> movementByPart = inventoryMovementRepository
-                .findMovementAggregatesByVehicle(vehicleModel)
+                .findMovementAggregatesByVehicle(searchModel)
                 .stream()
                 .collect(Collectors.groupingBy(CriticalPartMovementProjection::partId));
 
         return availability.stream()
                 .filter(dto -> dto.availableQuantity() <= dto.minimumQuantity())
-                .flatMap(dto -> buildCriticalPartEntries(dto, movementByPart.get(dto.partId()), vehicleModel))
+                .flatMap(dto -> buildCriticalPartEntries(dto, movementByPart.get(dto.partId()), normalizedModel))
                 .sorted(Comparator.comparing(CriticalPartReportDTO::availableQuantity)
                         .thenComparing(CriticalPartReportDTO::partName))
                 .toList();

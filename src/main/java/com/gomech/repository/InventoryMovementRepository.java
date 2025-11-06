@@ -189,7 +189,7 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             )
             FROM InventoryMovement m
             LEFT JOIN m.vehicle v
-            WHERE (:vehicleModel IS NULL OR (v.model IS NOT NULL AND UPPER(v.model) = UPPER(:vehicleModel)))
+            WHERE (:vehicleModel IS NULL OR (v.model IS NOT NULL AND UPPER(v.model) = :vehicleModel))
             GROUP BY m.part.id, COALESCE(v.model, 'Sem Histórico')
             """)
     List<CriticalPartMovementProjection> findMovementAggregatesByVehicle(@Param("vehicleModel") String vehicleModel);

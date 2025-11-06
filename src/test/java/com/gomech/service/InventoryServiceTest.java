@@ -97,7 +97,6 @@ class InventoryServiceTest {
         serviceOrderItem.setQuantity(2);
         serviceOrderItem.setUnitPrice(new BigDecimal("55.00"));
         serviceOrderItem.setRequiresStock(true);
-        serviceOrderItem.setStockProductId(inventoryItem.getId());
 
         when(inventoryItemRepository.findById(anyLong())).thenReturn(Optional.of(inventoryItem));
         when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -187,13 +186,11 @@ class InventoryServiceTest {
         item.setQuantity(quantity);
         item.setUnitPrice(new BigDecimal("42.00"));
         item.setRequiresStock(true);
-        item.setStockProductId(inventoryItem.getId());
         if (applied) {
             item.apply();
         }
         item.setStockReserved(reservedOnly);
         when(serviceOrderItemRepository.save(item)).thenReturn(item);
-        when(inventoryItemRepository.findById(item.getStockProductId())).thenReturn(Optional.of(inventoryItem));
         return item;
     }
 }

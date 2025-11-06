@@ -17,8 +17,7 @@ public class PythonAiService {
     private final String pythonServiceUrl;
 
     public PythonAiService(WebClient.Builder webClientBuilder) {
-        // this.pythonServiceUrl = "https://gomech-ai-service.onrender.com";
-        this.pythonServiceUrl = "http://localhost:8000";
+        this.pythonServiceUrl = "http://localhost:5000";
         this.webClient = webClientBuilder
                 .baseUrl(pythonServiceUrl)
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024))
