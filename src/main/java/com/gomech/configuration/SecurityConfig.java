@@ -35,7 +35,6 @@ public class SecurityConfig {
                     CorsConfiguration corsConfig = new CorsConfiguration();
                     corsConfig.setAllowedOrigins(List.of(
                             "http://localhost:3000",
-                            "http://127.0.0.1:3000",
                             "https://app.go-mech.com"
                     ));
                     corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
