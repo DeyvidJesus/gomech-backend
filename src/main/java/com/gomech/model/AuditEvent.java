@@ -19,6 +19,10 @@ public class AuditEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
+
     @Column(name = "event_type", nullable = false)
     private String eventType;
 
@@ -72,6 +76,31 @@ public class AuditEvent {
         this.payload = payload;
         this.eventHash = eventHash;
         this.blockchainReference = blockchainReference;
+        this.createdAt = Instant.now();
+    }
+
+    public AuditEvent(String eventType,
+                      String operation,
+                      String userEmail,
+                      String moduleName,
+                      String userRole,
+                      Long entityId,
+                      LocalDateTime occurredAt,
+                      String payload,
+                      String eventHash,
+                      String blockchainReference,
+                      Organization organization) {
+        this.eventType = eventType;
+        this.operation = operation;
+        this.userEmail = userEmail;
+        this.moduleName = moduleName;
+        this.userRole = userRole;
+        this.entityId = entityId;
+        this.occurredAt = occurredAt;
+        this.payload = payload;
+        this.eventHash = eventHash;
+        this.blockchainReference = blockchainReference;
+        this.organization = organization;
         this.createdAt = Instant.now();
     }
 }

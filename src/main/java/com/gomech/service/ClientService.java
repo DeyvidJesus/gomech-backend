@@ -1,8 +1,10 @@
 package com.gomech.service;
 
+import com.gomech.context.OrganizationContext;
 import com.gomech.dto.Clients.ClientCreateDTO;
 import com.gomech.dto.Clients.ClientUpdateDTO;
 import com.gomech.model.Client;
+import com.gomech.model.Organization;
 import com.gomech.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -36,7 +38,13 @@ public class ClientService {
     private AuditService auditService;
 
     public Client save(ClientCreateDTO dto) {
+        Organization organization = OrganizationContext.getOrganization();
+        if (organization == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        
         Client client = new Client();
+        client.setOrganization(organization);
         client.setName(dto.name());
         client.setDocument(dto.document());
         client.setPhone(dto.phone());
@@ -52,25 +60,50 @@ public class ClientService {
     }
 
     public List<Client> listAll() {
-        return repository.findAll();
+        Long organizationId = OrganizationContext.getOrganizationId();
+        if (organizationId == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        return repository.findByOrganizationId(organizationId);
     }
 
     public Page<Client> listAllPaginated(Pageable pageable) {
-        return repository.findAll(pageable);
+        Long organizationId = OrganizationContext.getOrganizationId();
+        if (organizationId == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        return repository.findByOrganizationId(organizationId, pageable);
     }
 
     public Optional<Client> getById(Long id) {
-        return repository.findById(id);
+        Long organizationId = OrganizationContext.getOrganizationId();
+        if (organizationId == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        return repository.findByIdAndOrganizationId(id, organizationId);
     }
 
     public void delete(Long id) {
+        Long organizationId = OrganizationContext.getOrganizationId();
+        if (organizationId == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        
+        Client client = repository.findByIdAndOrganizationId(id, organizationId)
+                .orElseThrow(() -> new RuntimeException("Client not found"));
+        
         repository.deleteById(id);
         auditService.logEntityAction("DELETE", "CLIENT", id,
                 "Cliente removido");
     }
 
     public Client update(Long id, ClientUpdateDTO updatedClient) {
-        Client client = repository.findById(id)
+        Long organizationId = OrganizationContext.getOrganizationId();
+        if (organizationId == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        
+        Client client = repository.findByIdAndOrganizationId(id, organizationId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         client.setName(updatedClient.name());
         client.setDocument(updatedClient.document());
@@ -86,6 +119,14 @@ public class ClientService {
     }
 
     public List<Client> saveAll(List<Client> clients) {
+        Organization organization = OrganizationContext.getOrganization();
+        if (organization == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        
+        // Set organization for all clients
+        clients.forEach(client -> client.setOrganization(organization));
+        
         List<Client> savedClients = repository.saveAll(clients);
         savedClients.forEach(client -> auditService.logEntityAction("CREATE", "CLIENT", client.getId(),
                 "Cliente cadastrado em lote: " + client.getName()));
@@ -234,7 +275,11 @@ public class ClientService {
     }
 
     private ByteArrayInputStream exportToDelimitedFile() {
-        List<Client> clients = repository.findAll();
+        Long organizationId = OrganizationContext.getOrganizationId();
+        if (organizationId == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        List<Client> clients = repository.findByOrganizationId(organizationId);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (CSVPrinter printer = new CSVPrinter(new PrintWriter(out),
                 CSVFormat.DEFAULT.withHeader("name", "document", "phone", "email", "address", "birthDate", "observations"))) {
@@ -250,7 +295,11 @@ public class ClientService {
     }
 
     private ByteArrayInputStream exportToExcel() {
-        List<Client> clients = repository.findAll();
+        Long organizationId = OrganizationContext.getOrganizationId();
+        if (organizationId == null) {
+            throw new RuntimeException("Organization context not found");
+        }
+        List<Client> clients = repository.findByOrganizationId(organizationId);
         try (Workbook workbook = WorkbookFactory.create(true); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("clients");
             Row header = sheet.createRow(0);

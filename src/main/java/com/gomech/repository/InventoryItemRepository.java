@@ -19,6 +19,19 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
     Page<InventoryItem> findByPartId(Long partId, Pageable pageable);
 
     Optional<InventoryItem> findByPartIdAndLocation(Long partId, String location);
+    
+    // Organization-scoped queries
+    Page<InventoryItem> findByOrganizationId(Long organizationId, Pageable pageable);
+    
+    List<InventoryItem> findByOrganizationId(Long organizationId);
+    
+    Optional<InventoryItem> findByIdAndOrganizationId(Long id, Long organizationId);
+    
+    List<InventoryItem> findByPartIdAndOrganizationId(Long partId, Long organizationId);
+    
+    Optional<InventoryItem> findByPartIdAndLocationAndOrganizationId(Long partId, String location, Long organizationId);
+    
+    long countByOrganizationId(Long organizationId);
 
     @Query("""
             SELECT new com.gomech.dto.Inventory.PartAvailabilityDTO(
@@ -36,6 +49,24 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
             GROUP BY p.id, p.name, p.sku
             """)
     List<PartAvailabilityDTO> findAggregatedAvailability();
+    
+    @Query("""
+            SELECT new com.gomech.dto.Inventory.PartAvailabilityDTO(
+                p.id,
+                p.name,
+                p.sku,
+                SUM(i.quantity),
+                SUM(i.reservedQuantity),
+                SUM(i.minimumQuantity),
+                SUM(i.quantity) - SUM(i.reservedQuantity),
+                (SELECT MAX(m.movementDate) FROM InventoryMovement m WHERE m.part = p AND m.organization.id = :organizationId)
+            )
+            FROM InventoryItem i
+            JOIN i.part p
+            WHERE i.organization.id = :organizationId
+            GROUP BY p.id, p.name, p.sku
+            """)
+    List<PartAvailabilityDTO> findAggregatedAvailabilityByOrganization(@Param("organizationId") Long organizationId);
 
     @Query("""
             SELECT new com.gomech.dto.Inventory.PartAvailabilityDTO(

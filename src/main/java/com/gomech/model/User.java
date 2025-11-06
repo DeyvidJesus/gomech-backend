@@ -42,6 +42,10 @@ public class User implements UserDetails {
     @Column(name = "mfa_secret", length = 512)
     private String mfaSecret;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<RefreshToken> refreshTokens = new HashSet<>();
 
@@ -50,6 +54,14 @@ public class User implements UserDetails {
         this.email = email;
         this.password = password;
         this.role = role;
+    }
+
+    public User(String name, String email, String password, Role role, Organization organization) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.organization = organization;
     }
 
     public void enableMfa(String encryptedSecret) {
