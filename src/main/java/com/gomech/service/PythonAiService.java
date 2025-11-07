@@ -4,6 +4,7 @@ import com.gomech.dto.Ai.AiRequestDTO;
 import com.gomech.dto.Ai.AiResponseDTO;
 import com.gomech.dto.Inventory.InventoryConsumptionFeatureDTO;
 import com.gomech.dto.Inventory.InventoryRecommendationDTO;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -17,7 +18,7 @@ public class PythonAiService {
     private final String pythonServiceUrl;
 
     public PythonAiService(WebClient.Builder webClientBuilder,
-                           @org.springframework.beans.factory.annotation.Value("${ai.service.url:http://localhost:5000}") String aiServiceUrl) {
+                           @Value("${ai.service.url:http://localhost:5000}") String aiServiceUrl) {
         this.pythonServiceUrl = aiServiceUrl;
         this.webClient = webClientBuilder
                 .baseUrl(pythonServiceUrl)
