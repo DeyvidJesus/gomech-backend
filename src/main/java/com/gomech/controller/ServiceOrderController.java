@@ -6,12 +6,17 @@ import com.gomech.dto.ServiceOrder.ServiceOrderUpdateDTO;
 import com.gomech.dto.ServiceOrder.ServiceOrderItemCreateDTO;
 import com.gomech.dto.ServiceOrder.ServiceOrderItemResponseDTO;
 import com.gomech.dto.ServiceOrder.UpdateStatusDTO;
+import com.gomech.dto.PageResponse;
 import com.gomech.model.ServiceOrderStatus;
 import com.gomech.service.ServiceOrderService;
 import com.gomech.service.ServiceOrderItemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +44,19 @@ public class ServiceOrderController {
     @GetMapping
     public ResponseEntity<List<ServiceOrderResponseDTO>> listAll() {
         return ResponseEntity.ok(serviceOrderService.listAll());
+    }
+
+    @GetMapping("/paginated")
+    public ResponseEntity<PageResponse<ServiceOrderResponseDTO>> listPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction
+    ) {
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        Page<ServiceOrderResponseDTO> serviceOrderPage = serviceOrderService.listAllPaginated(pageable);
+        return ResponseEntity.ok(PageResponse.from(serviceOrderPage));
     }
 
     @GetMapping("/{id}")
@@ -122,12 +140,16 @@ public class ServiceOrderController {
     }
 
     @DeleteMapping("/items/{itemId}")
-    public ResponseEntity<Void> deleteItem(@PathVariable Long itemId) {
+    public ResponseEntity<?> deleteItem(@PathVariable Long itemId) {
         try {
+            logger.info("=== TENTANDO DELETAR ITEM === ID: {}", itemId);
             itemService.deleteItem(itemId);
+            logger.info("=== ITEM DELETADO COM SUCESSO === ID: {}", itemId);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            logger.error("=== ERRO AO DELETAR ITEM === ID: {}, Erro: {}", itemId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(java.util.Map.of("message", e.getMessage()));
         }
     }
 
@@ -152,21 +174,21 @@ public class ServiceOrderController {
     }
 
     // Endpoints para controle de estoque (preparação para módulo futuro)
-    @PutMapping("/items/{itemId}/reserve-stock")
-    public ResponseEntity<ServiceOrderItemResponseDTO> reserveStock(@PathVariable Long itemId) {
+    @PutMapping("/items/{itemId}/consume-stock")
+    public ResponseEntity<ServiceOrderItemResponseDTO> consumeStock(@PathVariable Long itemId) {
         try {
-            ServiceOrderItemResponseDTO reserved = itemService.reserveStock(itemId);
-            return ResponseEntity.ok(reserved);
+            ServiceOrderItemResponseDTO consumed = itemService.consumeStock(itemId);
+            return ResponseEntity.ok(consumed);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @PutMapping("/items/{itemId}/release-stock")
-    public ResponseEntity<ServiceOrderItemResponseDTO> releaseStock(@PathVariable Long itemId) {
+    @PutMapping("/items/{itemId}/return-stock")
+    public ResponseEntity<ServiceOrderItemResponseDTO> returnStock(@PathVariable Long itemId) {
         try {
-            ServiceOrderItemResponseDTO released = itemService.releaseStock(itemId);
-            return ResponseEntity.ok(released);
+            ServiceOrderItemResponseDTO returned = itemService.returnStock(itemId);
+            return ResponseEntity.ok(returned);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

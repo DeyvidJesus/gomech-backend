@@ -5,6 +5,7 @@ import com.gomech.domain.InventoryMovement;
 import com.gomech.domain.InventoryMovementType;
 import com.gomech.domain.Part;
 import com.gomech.model.Client;
+import com.gomech.model.Organization;
 import com.gomech.model.ServiceOrder;
 import com.gomech.model.ServiceOrderItem;
 import com.gomech.model.ServiceOrderItemType;
@@ -13,6 +14,7 @@ import com.gomech.repository.InventoryItemRepository;
 import com.gomech.repository.InventoryMovementRepository;
 import com.gomech.repository.PartRepository;
 import com.gomech.repository.ServiceOrderItemRepository;
+import com.gomech.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -51,6 +54,9 @@ class InventoryServiceTest {
     @Mock
     private InventoryAlertService inventoryAlertService;
 
+    @Mock
+    private AuditService auditService;
+
     @InjectMocks
     private InventoryService inventoryService;
 
@@ -61,12 +67,16 @@ class InventoryServiceTest {
 
     @BeforeEach
     void init() {
+        Organization organization = new Organization();
+        organization.setId(1L);
+
         part = new Part();
         part.setId(1L);
         part.setName("Filtro de óleo");
         part.setSku("FLT-001");
         part.setUnitCost(new BigDecimal("30.00"));
         part.setUnitPrice(new BigDecimal("50.00"));
+        part.setOrganization(organization);
 
         inventoryItem = new InventoryItem();
         inventoryItem.setId(10L);
@@ -74,20 +84,24 @@ class InventoryServiceTest {
         inventoryItem.setLocation("MAIN");
         inventoryItem.setQuantity(10);
         inventoryItem.setReservedQuantity(0);
+        inventoryItem.setOrganization(organization);
 
         Client client = new Client();
         client.setId(100L);
         client.setName("Jane");
+        client.setOrganization(organization);
         Vehicle vehicle = new Vehicle();
         vehicle.setId(200L);
         vehicle.setClient(client);
         vehicle.setLicensePlate("XYZ9Z99");
+        vehicle.setOrganization(organization);
 
         serviceOrder = new ServiceOrder();
         serviceOrder.setId(300L);
         serviceOrder.setClient(client);
         serviceOrder.setVehicle(vehicle);
         serviceOrder.setOrderNumber("OS-TEST");
+        serviceOrder.setOrganization(organization);
 
         serviceOrderItem = new ServiceOrderItem();
         serviceOrderItem.setId(400L);
@@ -97,7 +111,7 @@ class InventoryServiceTest {
         serviceOrderItem.setQuantity(2);
         serviceOrderItem.setUnitPrice(new BigDecimal("55.00"));
         serviceOrderItem.setRequiresStock(true);
-        serviceOrderItem.setStockProductId(inventoryItem.getId());
+        serviceOrderItem.setInventoryItem(inventoryItem);
 
         when(inventoryItemRepository.findById(anyLong())).thenReturn(Optional.of(inventoryItem));
         when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -172,7 +186,14 @@ class InventoryServiceTest {
         verify(inventoryItemRepository, times(4)).save(any(InventoryItem.class));
         verify(inventoryMovementRepository, times(2)).save(any(InventoryMovement.class));
 
-        assertThat(reservedItem.getStockReserved()).isFalse();
+        ArgumentCaptor<ServiceOrderItem> itemCaptor = ArgumentCaptor.forClass(ServiceOrderItem.class);
+        verify(serviceOrderItemRepository, atLeastOnce()).save(itemCaptor.capture());
+        assertThat(itemCaptor.getAllValues())
+                .anySatisfy(saved -> {
+                    if (saved.getId().equals(reservedItem.getId())) {
+                        assertThat(saved.getStockReserved()).isFalse();
+                    }
+                });
         assertThat(appliedItem.getApplied()).isFalse();
         assertThat(inventoryItem.getReservedQuantity()).isZero();
         assertThat(inventoryItem.getQuantity()).isEqualTo(8);
@@ -187,13 +208,12 @@ class InventoryServiceTest {
         item.setQuantity(quantity);
         item.setUnitPrice(new BigDecimal("42.00"));
         item.setRequiresStock(true);
-        item.setStockProductId(inventoryItem.getId());
+        item.setInventoryItem(inventoryItem);
         if (applied) {
             item.apply();
         }
         item.setStockReserved(reservedOnly);
         when(serviceOrderItemRepository.save(item)).thenReturn(item);
-        when(inventoryItemRepository.findById(item.getStockProductId())).thenReturn(Optional.of(inventoryItem));
         return item;
     }
 }

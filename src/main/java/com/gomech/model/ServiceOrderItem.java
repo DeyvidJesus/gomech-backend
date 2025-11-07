@@ -1,6 +1,8 @@
 package com.gomech.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.gomech.domain.InventoryItem;
+import com.gomech.domain.Part;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +16,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@ToString(exclude = {"serviceOrder"})
+@ToString(exclude = {"serviceOrder", "part", "inventoryItem"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "service_items")
@@ -29,6 +31,10 @@ public class ServiceOrderItem {
     @JoinColumn(name = "service_order_id", nullable = false)
     @JsonIgnore
     private ServiceOrder serviceOrder;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "part_id")
+    private Part part;
 
     @Column(nullable = false, length = 500)
     private String description;
@@ -51,8 +57,9 @@ public class ServiceOrderItem {
     @Column(length = 100)
     private String productCode;
 
-    @Column(name = "stock_product_id")
-    private Long stockProductId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stock_product_id")
+    private InventoryItem inventoryItem;
 
     @Column(nullable = false)
     private Boolean requiresStock = false;

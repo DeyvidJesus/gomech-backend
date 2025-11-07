@@ -2,6 +2,8 @@ package com.gomech.repository;
 
 import com.gomech.domain.InventoryItem;
 import com.gomech.dto.Inventory.PartAvailabilityDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,8 +15,23 @@ import java.util.Optional;
 @Repository
 public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
     List<InventoryItem> findByPartId(Long partId);
+    
+    Page<InventoryItem> findByPartId(Long partId, Pageable pageable);
 
     Optional<InventoryItem> findByPartIdAndLocation(Long partId, String location);
+    
+    // Organization-scoped queries
+    Page<InventoryItem> findByOrganizationId(Long organizationId, Pageable pageable);
+    
+    List<InventoryItem> findByOrganizationId(Long organizationId);
+    
+    Optional<InventoryItem> findByIdAndOrganizationId(Long id, Long organizationId);
+    
+    List<InventoryItem> findByPartIdAndOrganizationId(Long partId, Long organizationId);
+    
+    Optional<InventoryItem> findByPartIdAndLocationAndOrganizationId(Long partId, String location, Long organizationId);
+    
+    long countByOrganizationId(Long organizationId);
 
     @Query("""
             SELECT new com.gomech.dto.Inventory.PartAvailabilityDTO(
@@ -32,6 +49,24 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
             GROUP BY p.id, p.name, p.sku
             """)
     List<PartAvailabilityDTO> findAggregatedAvailability();
+    
+    @Query("""
+            SELECT new com.gomech.dto.Inventory.PartAvailabilityDTO(
+                p.id,
+                p.name,
+                p.sku,
+                SUM(i.quantity),
+                SUM(i.reservedQuantity),
+                SUM(i.minimumQuantity),
+                SUM(i.quantity) - SUM(i.reservedQuantity),
+                (SELECT MAX(m.movementDate) FROM InventoryMovement m WHERE m.part = p AND m.organization.id = :organizationId)
+            )
+            FROM InventoryItem i
+            JOIN i.part p
+            WHERE i.organization.id = :organizationId
+            GROUP BY p.id, p.name, p.sku
+            """)
+    List<PartAvailabilityDTO> findAggregatedAvailabilityByOrganization(@Param("organizationId") Long organizationId);
 
     @Query("""
             SELECT new com.gomech.dto.Inventory.PartAvailabilityDTO(
@@ -98,5 +133,19 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
             GROUP BY p.id, p.name, p.sku
             """)
     List<PartAvailabilityDTO> findAggregatedAvailabilityByClient(@Param("clientId") Long clientId);
+
+
+    @Query("""
+            SELECT new com.gomech.dto.Analytics.SupplierPriceStats(
+                p.manufacturer,
+                AVG(i.unitCost)
+            )
+            FROM InventoryItem i
+            JOIN i.part p
+            WHERE p.manufacturer IS NOT NULL
+              AND i.unitCost IS NOT NULL
+            GROUP BY p.manufacturer
+            """)
+    List<com.gomech.dto.Analytics.SupplierPriceStats> findAverageCostBySupplier();
 
 }

@@ -3,8 +3,13 @@ package com.gomech.controller;
 import com.gomech.dto.Vehicles.VehicleCreateDTO;
 import com.gomech.dto.Vehicles.VehicleResponseDTO;
 import com.gomech.dto.Vehicles.VehicleUpdateDTO;
+import com.gomech.dto.PageResponse;
 import com.gomech.service.VehicleService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +46,19 @@ public class VehicleController {
         return service.listAll();
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<PageResponse<VehicleResponseDTO>> listPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction
+    ) {
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        Page<VehicleResponseDTO> vehiclePage = service.listAllPaginated(pageable);
+        return ResponseEntity.ok(PageResponse.from(vehiclePage));
+    }
+
     @GetMapping("/export")
     public ResponseEntity<InputStreamResource> export(@RequestParam(defaultValue = "csv") String format) {
         var stream = service.exportToFile(format);
@@ -51,6 +69,20 @@ public class VehicleController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=vehicles." + ext)
+                .contentType(type)
+                .body(new InputStreamResource(stream));
+    }
+
+    @GetMapping("/template")
+    public ResponseEntity<InputStreamResource> downloadTemplate(@RequestParam(defaultValue = "xlsx") String format) {
+        var stream = service.generateTemplate(format);
+        String ext = (format != null && (format.equalsIgnoreCase("xlsx") || format.equalsIgnoreCase("xls"))) ? "xlsx" : "csv";
+        MediaType type = ext.equals("xlsx")
+                ? MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                : MediaType.parseMediaType("text/csv");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=template_veiculos." + ext)
                 .contentType(type)
                 .body(new InputStreamResource(stream));
     }
@@ -71,5 +103,26 @@ public class VehicleController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/service-history")
+    public ResponseEntity<List<com.gomech.dto.ServiceOrder.ServiceOrderResponseDTO>> getServiceHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getServiceHistory(id));
+    }
+
+    @GetMapping("/{id}/service-history/export")
+    public ResponseEntity<InputStreamResource> exportServiceHistory(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "csv") String format) {
+        var stream = service.exportServiceHistory(id, format);
+        String ext = (format != null && (format.equalsIgnoreCase("xlsx") || format.equalsIgnoreCase("xls"))) ? "xlsx" : "csv";
+        MediaType type = ext.equals("xlsx")
+                ? MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                : MediaType.parseMediaType("text/csv");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=vehicle_" + id + "_service_history." + ext)
+                .contentType(type)
+                .body(new InputStreamResource(stream));
     }
 }

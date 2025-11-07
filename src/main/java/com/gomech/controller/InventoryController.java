@@ -14,6 +14,7 @@ import com.gomech.dto.Inventory.StockCancellationRequestDTO;
 import com.gomech.dto.Inventory.StockConsumptionRequestDTO;
 import com.gomech.dto.Inventory.StockReservationRequestDTO;
 import com.gomech.dto.Inventory.StockReturnRequestDTO;
+import com.gomech.dto.PageResponse;
 import com.gomech.service.InventoryRecommendationService;
 import com.gomech.service.InventoryReportService;
 import com.gomech.service.InventoryService;
@@ -21,9 +22,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -52,6 +62,21 @@ public class InventoryController {
         return inventoryService.listItems(partId);
     }
 
+    @Operation(summary = "Lista os itens de estoque com paginação")
+    @GetMapping("/items/paginated")
+    public ResponseEntity<PageResponse<InventoryItemResponseDTO>> listItemsPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction,
+            @RequestParam(required = false) Long partId
+    ) {
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        Page<InventoryItemResponseDTO> itemPage = inventoryService.listItemsPaginated(pageable, partId);
+        return ResponseEntity.ok(PageResponse.from(itemPage));
+    }
+
     @Operation(summary = "Busca detalhes de um item de estoque")
     @GetMapping("/items/{id}")
     public ResponseEntity<InventoryItemResponseDTO> getItem(@PathVariable Long id) {
@@ -64,6 +89,7 @@ public class InventoryController {
 
     @Operation(summary = "Cria um novo item de estoque")
     @PostMapping("/items")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<InventoryItemResponseDTO> createItem(@Valid @RequestBody InventoryItemCreateDTO dto) {
         try {
             InventoryItemResponseDTO response = inventoryService.createItem(dto);
@@ -75,6 +101,7 @@ public class InventoryController {
 
     @Operation(summary = "Atualiza um item de estoque existente")
     @PutMapping("/items/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<InventoryItemResponseDTO> updateItem(@PathVariable Long id,
                                                                @Valid @RequestBody InventoryItemUpdateDTO dto) {
         try {
@@ -86,6 +113,7 @@ public class InventoryController {
 
     @Operation(summary = "Remove um item de estoque")
     @DeleteMapping("/items/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
         try {
             inventoryService.deleteItem(id);
@@ -207,6 +235,27 @@ public class InventoryController {
     @GetMapping("/history/clients/{clientId}")
     public ResponseEntity<List<PartConsumptionStats>> getClientHistory(@PathVariable Long clientId) {
         return ResponseEntity.ok(inventoryReportService.getClientConsumptionHistory(clientId));
+    }
+
+    @Operation(summary = "Importa itens de estoque em massa via planilha")
+    @PostMapping(value = "/items/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<InventoryItemResponseDTO>> uploadItems(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.saveFromFile(file));
+    }
+
+    @Operation(summary = "Baixa template para importação em massa de itens de estoque")
+    @GetMapping("/items/template")
+    public ResponseEntity<InputStreamResource> downloadTemplate(@RequestParam(defaultValue = "xlsx") String format) {
+        var stream = inventoryService.generateTemplate(format);
+        String ext = (format != null && (format.equalsIgnoreCase("xlsx") || format.equalsIgnoreCase("xls"))) ? "xlsx" : "csv";
+        MediaType type = ext.equals("xlsx")
+                ? MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                : MediaType.parseMediaType("text/csv");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=template_estoque." + ext)
+                .contentType(type)
+                .body(new InputStreamResource(stream));
     }
 
     private ResponseStatusException translateException(RuntimeException ex) {

@@ -1,6 +1,7 @@
 package com.gomech.domain;
 
 import com.gomech.model.Client;
+import com.gomech.model.Organization;
 import com.gomech.model.ServiceOrder;
 import com.gomech.model.Vehicle;
 import com.gomech.repository.ClientRepository;
@@ -9,6 +10,7 @@ import com.gomech.repository.InventoryMovementRepository;
 import com.gomech.repository.PartRepository;
 import com.gomech.repository.ServiceOrderRepository;
 import com.gomech.repository.VehicleRepository;
+import com.gomech.repository.OrganizationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -46,11 +48,16 @@ class InventoryPersistenceTest {
     @Autowired
     private TestEntityManager entityManager;
 
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
     @Test
     void shouldPersistInventoryMovementWithRelationships() {
         Client client = new Client();
         client.setName("John Doe");
         client.setEmail("john@example.com");
+        Organization organization = organizationRepository.findById(1L).orElseThrow();
+        client.setOrganization(organization);
         client = clientRepository.save(client);
 
         Vehicle vehicle = new Vehicle();
@@ -63,12 +70,14 @@ class InventoryPersistenceTest {
         vehicle.setObservations("Test vehicle");
         vehicle.setKilometers(12000);
         vehicle.setChassisId("CHS123456789");
+        vehicle.setOrganization(organization);
         vehicle = vehicleRepository.save(vehicle);
 
         ServiceOrder serviceOrder = new ServiceOrder();
         serviceOrder.setClient(client);
         serviceOrder.setVehicle(vehicle);
         serviceOrder.setDescription("Brake replacement");
+        serviceOrder.setOrganization(organization);
         serviceOrder = serviceOrderRepository.save(serviceOrder);
 
         Part part = new Part();
@@ -77,6 +86,7 @@ class InventoryPersistenceTest {
         part.setManufacturer("ACME");
         part.setUnitCost(new BigDecimal("50.00"));
         part.setUnitPrice(new BigDecimal("80.00"));
+        part.setOrganization(organization);
         part = partRepository.save(part);
 
         InventoryItem item = new InventoryItem();
@@ -87,6 +97,7 @@ class InventoryPersistenceTest {
         item.setMinimumQuantity(2);
         item.setUnitCost(new BigDecimal("50.00"));
         item.setSalePrice(new BigDecimal("80.00"));
+        item.setOrganization(organization);
         item = inventoryItemRepository.save(item);
 
         InventoryMovement movement = new InventoryMovement();
@@ -97,6 +108,7 @@ class InventoryPersistenceTest {
         movement.setQuantity(2);
         movement.setReferenceCode("SO-" + serviceOrder.getId());
         movement.setNotes("Used for brake replacement");
+        movement.setOrganization(organization);
         serviceOrder.addInventoryMovement(movement);
         serviceOrderRepository.saveAndFlush(serviceOrder);
 

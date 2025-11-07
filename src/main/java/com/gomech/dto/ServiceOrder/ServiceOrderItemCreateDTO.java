@@ -14,7 +14,8 @@ public class ServiceOrderItemCreateDTO {
     private Integer quantity;
     private BigDecimal unitPrice;
     private String productCode;
-    private Long stockProductId;
+    private Long partId;
+    private Long inventoryItemId;
     private Boolean requiresStock;
     private String observations;
 }

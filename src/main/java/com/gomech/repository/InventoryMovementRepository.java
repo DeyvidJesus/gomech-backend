@@ -4,6 +4,7 @@ import com.gomech.domain.InventoryMovement;
 import com.gomech.dto.Inventory.InventoryConsumptionFeatureDTO;
 import com.gomech.dto.Inventory.CriticalPartMovementProjection;
 import com.gomech.dto.Inventory.PartConsumptionStats;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -188,8 +189,41 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             )
             FROM InventoryMovement m
             LEFT JOIN m.vehicle v
-            WHERE (:vehicleModel IS NULL OR (v.model IS NOT NULL AND UPPER(v.model) = UPPER(:vehicleModel)))
+            WHERE (:vehicleModel IS NULL OR (v.model IS NOT NULL AND UPPER(v.model) = :vehicleModel))
             GROUP BY m.part.id, COALESCE(v.model, 'Sem Histórico')
             """)
     List<CriticalPartMovementProjection> findMovementAggregatesByVehicle(@Param("vehicleModel") String vehicleModel);
+
+    @Query("""
+            SELECT new com.gomech.dto.Analytics.PartUsageRanking(
+                m.part.id,
+                m.part.name,
+                SUM(m.quantity)
+            )
+            FROM InventoryMovement m
+            WHERE m.movementType = com.gomech.domain.InventoryMovementType.OUT
+              AND m.movementDate BETWEEN :start AND :end
+            GROUP BY m.part.id, m.part.name
+            ORDER BY SUM(m.quantity) DESC
+            """)
+    List<com.gomech.dto.Analytics.PartUsageRanking> findTopConsumedPartsBetween(
+            @Param("start") java.time.LocalDateTime start,
+            @Param("end") java.time.LocalDateTime end,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT new com.gomech.dto.Analytics.PartStockBalance(
+                p.id,
+                p.name,
+                COALESCE(SUM(CASE WHEN m.movementType = com.gomech.domain.InventoryMovementType.IN THEN m.quantity ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN m.movementType = com.gomech.domain.InventoryMovementType.OUT THEN m.quantity ELSE 0 END), 0)
+            )
+            FROM InventoryMovement m
+            JOIN m.part p
+            GROUP BY p.id, p.name
+            HAVING COALESCE(SUM(CASE WHEN m.movementType = com.gomech.domain.InventoryMovementType.IN THEN m.quantity ELSE 0 END), 0) >
+                   COALESCE(SUM(CASE WHEN m.movementType = com.gomech.domain.InventoryMovementType.OUT THEN m.quantity ELSE 0 END), 0)
+            """)
+    List<com.gomech.dto.Analytics.PartStockBalance> findPartsWithUnusedStock();
 }

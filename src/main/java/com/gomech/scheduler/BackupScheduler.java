@@ -1,5 +1,6 @@
 package com.gomech.scheduler;
 
+import com.gomech.dto.Audit.AuditEventRequest;
 import com.gomech.service.AuditService;
 import com.gomech.service.BackupService;
 import org.slf4j.Logger;
@@ -26,6 +27,16 @@ public class BackupScheduler {
         var result = backupService.performBackup();
         boolean integrity = backupService.verifyIntegrity(result.file(), result.checksum());
         String payload = "backupFile=" + result.file().getFileName() + ", checksum=" + result.checksum() + ", integrity=" + integrity;
-        auditService.registerEvent("BACKUP_EXECUTED", payload);
+        AuditEventRequest request = new AuditEventRequest(
+                "BACKUP_EXECUTED",
+                "Rotina de backup concluída",
+                "system@gomech",
+                "infraestrutura",
+                "SYSTEM",
+                java.time.LocalDateTime.now(),
+                payload,
+                null
+        );
+        auditService.registerEvent(request);
     }
 }

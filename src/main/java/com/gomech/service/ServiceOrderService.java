@@ -4,6 +4,8 @@ import com.gomech.dto.ServiceOrder.*;
 import com.gomech.model.*;
 import com.gomech.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,9 @@ public class ServiceOrderService {
     @Autowired
     private InventoryService inventoryService;
 
+    @Autowired
+    private ServiceOrderItemAssembler serviceOrderItemAssembler;
+
     public ServiceOrderResponseDTO create(ServiceOrderCreateDTO dto) {
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
                 .orElseThrow(() -> new RuntimeException("Veículo não encontrado"));
@@ -41,26 +46,14 @@ public class ServiceOrderService {
 
         if (dto.getItems() != null && !dto.getItems().isEmpty()) {
             for (ServiceOrderItemCreateDTO itemDto : dto.getItems()) {
-                ServiceOrderItem item = new ServiceOrderItem();
-                getServiceOrderItem(itemDto, item);
+                ServiceOrderItem item = serviceOrderItemAssembler.create(serviceOrder, itemDto);
                 serviceOrder.addItem(item);
             }
         }
 
         ServiceOrder saved = serviceOrderRepository.save(serviceOrder);
-        inventoryService.reserveItemsForOrder(saved);
+        autoConsumeItems(saved);
         return convertToResponseDTO(saved);
-    }
-
-    static void getServiceOrderItem(ServiceOrderItemCreateDTO itemDto, ServiceOrderItem item) {
-        item.setDescription(itemDto.getDescription());
-        item.setItemType(itemDto.getItemType());
-        item.setQuantity(itemDto.getQuantity());
-        item.setUnitPrice(itemDto.getUnitPrice());
-        item.setProductCode(itemDto.getProductCode());
-        item.setStockProductId(itemDto.getStockProductId());
-        item.setRequiresStock(itemDto.getRequiresStock());
-        item.setObservations(itemDto.getObservations());
     }
 
     private static ServiceOrder getServiceOrder(ServiceOrderCreateDTO dto, Vehicle vehicle, Client client) {
@@ -84,6 +77,11 @@ public class ServiceOrderService {
         return serviceOrderRepository.findAll().stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Page<ServiceOrderResponseDTO> listAllPaginated(Pageable pageable) {
+        return serviceOrderRepository.findAll(pageable)
+                .map(this::convertToResponseDTO);
     }
 
     public Optional<ServiceOrderResponseDTO> getById(Long id) {
@@ -112,6 +110,25 @@ public class ServiceOrderService {
         return serviceOrderRepository.findByVehicleId(vehicleId).stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    private void autoConsumeItems(ServiceOrder serviceOrder) {
+        boolean consumedAny = false;
+        for (ServiceOrderItem item : serviceOrder.getItems()) {
+            if (!Boolean.TRUE.equals(item.getRequiresStock())) {
+                continue;
+            }
+
+            item.apply();
+            inventoryService.consumeDirect(serviceOrder, item, item.getQuantity(),
+                    "Consumo automático ao criar ordem de serviço");
+            consumedAny = true;
+        }
+
+        if (consumedAny) {
+            serviceOrder.calculateTotalCost();
+            serviceOrderRepository.save(serviceOrder);
+        }
     }
 
     public ServiceOrderResponseDTO update(Long id, ServiceOrderUpdateDTO dto) {
@@ -244,6 +261,15 @@ public class ServiceOrderService {
         dto.setUnitPrice(item.getUnitPrice());
         dto.setTotalPrice(item.getTotalPrice());
         dto.setProductCode(item.getProductCode());
+        if (item.getPart() != null) {
+            dto.setPartId(item.getPart().getId());
+            dto.setPartName(item.getPart().getName());
+            dto.setPartSku(item.getPart().getSku());
+        }
+        if (item.getInventoryItem() != null) {
+            dto.setInventoryItemId(item.getInventoryItem().getId());
+            dto.setInventoryLocation(item.getInventoryItem().getLocation());
+        }
         dto.setRequiresStock(item.getRequiresStock());
         dto.setStockReserved(item.getStockReserved());
         dto.setApplied(item.getApplied());

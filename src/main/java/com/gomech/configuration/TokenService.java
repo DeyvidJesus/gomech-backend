@@ -29,13 +29,17 @@ public class TokenService {
     public String generateAccessToken(User user){
         try{
             Algorithm algorithm = Algorithm.HMAC256(secret);
-            String token = JWT.create()
+            var jwtBuilder = JWT.create()
                     .withIssuer("auth-api")
                     .withSubject(user.getEmail())
                     .withClaim("role", user.getRole().name())
-                    .withExpiresAt(genExpirationDate())
-                    .sign(algorithm);
-            return token;
+                    .withExpiresAt(genExpirationDate());
+
+            if (user.getOrganization() != null && user.getOrganization().getId() != null) {
+                jwtBuilder.withClaim("organizationId", user.getOrganization().getId());
+            }
+
+            return jwtBuilder.sign(algorithm);
         } catch (JWTCreationException exception) {
             throw new RuntimeException("Error while generating token", exception);
         }
