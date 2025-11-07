@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class AuditEvent {
 
     @Id

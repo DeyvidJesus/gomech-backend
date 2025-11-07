@@ -12,6 +12,7 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "clients")
+@EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class Client {
     
     @Id

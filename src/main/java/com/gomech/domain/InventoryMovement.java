@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "inventory_movements")
+@jakarta.persistence.EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class InventoryMovement {
 
     @Id

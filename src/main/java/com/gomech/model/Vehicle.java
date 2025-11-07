@@ -22,6 +22,7 @@ import java.util.List;
 @ToString(exclude = "inventoryMovements")
 @EqualsAndHashCode(exclude = "inventoryMovements")
 @Table(name = "vehicles")
+@EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class Vehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

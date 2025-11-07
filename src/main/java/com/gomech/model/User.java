@@ -17,6 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
+@EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class User implements UserDetails {
 
     @Id

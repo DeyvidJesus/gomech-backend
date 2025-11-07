@@ -29,6 +29,7 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "parts")
+@jakarta.persistence.EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class Part {
 
     @Id

@@ -20,6 +20,7 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "service_orders")
+@EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class ServiceOrder {
 
     @Id

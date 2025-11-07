@@ -32,6 +32,7 @@ import java.util.List;
 @Table(name = "inventory_items", uniqueConstraints = {
         @UniqueConstraint(name = "uk_inventory_part_location", columnNames = {"part_id", "location"})
 })
+@jakarta.persistence.EntityListeners(com.gomech.listener.OrganizationEntityListener.class)
 public class InventoryItem {
 
     @Id
