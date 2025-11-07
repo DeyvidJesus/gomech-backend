@@ -89,6 +89,16 @@ public class ServiceOrderItemAssembler {
         if (resolvedInventoryItem != null) {
             item.setInventoryItem(resolvedInventoryItem);
             item.setRequiresStock(true);
+        } else if (currentPart != null && item.getInventoryItem() == null) {
+            // Se tem peça mas não tem inventoryItem, busca automaticamente um item de estoque para a peça
+            InventoryItem autoInventoryItem = findInventoryItemByPart(currentPart);
+            if (autoInventoryItem != null) {
+                item.setInventoryItem(autoInventoryItem);
+                item.setRequiresStock(true);
+            } else {
+                // Peça sem estoque disponível - marca como requer estoque mas não associa item
+                item.setRequiresStock(true);
+            }
         } else if (dto.getRequiresStock() != null) {
             item.setRequiresStock(dto.getRequiresStock());
         } else if (isCreate && item.getRequiresStock() == null) {
@@ -121,6 +131,16 @@ public class ServiceOrderItemAssembler {
             item.setPart(inventoryPart);
         }
         return inventoryItem;
+    }
+
+    private InventoryItem findInventoryItemByPart(Part part) {
+        if (part == null || part.getId() == null) {
+            return null;
+        }
+        // Busca o primeiro item de estoque disponível para esta peça
+        return inventoryItemRepository.findByPartId(part.getId()).stream()
+                .findFirst()
+                .orElse(null);
     }
 
     private void ensureDescription(ServiceOrderItem item) {

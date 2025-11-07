@@ -88,9 +88,21 @@ public class VehicleService {
     }
 
     public void delete(Long id) {
+        Vehicle vehicle = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Veículo não encontrado"));
+        
+        // Verifica se o veículo possui ordens de serviço
+        List<ServiceOrder> serviceOrders = serviceOrderRepository.findByVehicleId(id);
+        if (!serviceOrders.isEmpty()) {
+            throw new IllegalStateException(
+                String.format("Não é possível excluir este veículo pois ele possui %d ordem(ns) de serviço associada(s). " +
+                              "Remova ou transfira as ordens de serviço antes de excluir o veículo.", serviceOrders.size())
+            );
+        }
+        
         repository.deleteById(id);
         auditService.logEntityAction("DELETE", "VEHICLE", id,
-                "Veículo removido");
+                "Veículo removido: " + vehicle.getLicensePlate());
     }
 
     public VehicleResponseDTO update(Long id, VehicleUpdateDTO dto) {

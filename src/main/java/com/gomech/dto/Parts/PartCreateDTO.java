@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 
 public record PartCreateDTO(
         @NotBlank @Size(max = 150) String name,
-        @NotBlank @Size(max = 100) String sku,
+        @Size(max = 100) String sku, // Opcional - será gerado automaticamente se não fornecido
         @Size(max = 150) String manufacturer,
         String description,
         @DecimalMin(value = "0.0") BigDecimal unitCost,

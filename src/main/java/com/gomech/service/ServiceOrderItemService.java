@@ -111,20 +111,20 @@ public class ServiceOrderItemService {
 
     public void deleteItem(Long id) {
         logger.info("=== SERVICE: Iniciando deleção do item {} ===", id);
-        
+
         ServiceOrderItem item = itemRepository.findById(id)
-            .orElseThrow(() -> {
-                logger.error("=== SERVICE: Item {} não encontrado ===", id);
-                return new RuntimeException("Item não encontrado com ID: " + id);
-            });
-        
-        logger.info("=== SERVICE: Item encontrado - Descrição: {}, Applied: {}, RequiresStock: {} ===", 
-            item.getDescription(), item.getApplied(), item.getRequiresStock());
-        
+                .orElseThrow(() -> {
+                    logger.error("=== SERVICE: Item {} não encontrado ===", id);
+                    return new RuntimeException("Item não encontrado com ID: " + id);
+                });
+
+        logger.info("=== SERVICE: Item encontrado - Descrição: {}, Applied: {}, RequiresStock: {} ===",
+                item.getDescription(), item.getApplied(), item.getRequiresStock());
+
         ServiceOrder serviceOrder = item.getServiceOrder();
-        logger.info("=== SERVICE: OS associada - ID: {}, Number: {} ===", 
-            serviceOrder.getId(), serviceOrder.getOrderNumber());
-        
+        logger.info("=== SERVICE: OS associada - ID: {}, Number: {} ===",
+                serviceOrder.getId(), serviceOrder.getOrderNumber());
+
         try {
             handleInventoryOnDelete(item);
             logger.info("=== SERVICE: Inventário tratado com sucesso ===");
@@ -132,17 +132,22 @@ public class ServiceOrderItemService {
             logger.error("=== SERVICE: Erro ao tratar inventário ===", e);
             throw new RuntimeException("Erro ao processar estoque: " + e.getMessage(), e);
         }
-        
+
         try {
-            itemRepository.deleteById(id);
+            // ⚙️ Remove a referência do item na lista da OS antes do delete
+            if (serviceOrder.getItems() != null) {
+                serviceOrder.getItems().removeIf(i -> Objects.equals(i.getId(), id));
+            }
+
+            itemRepository.delete(item);
             logger.info("=== SERVICE: Item deletado do banco com sucesso ===");
         } catch (Exception e) {
             logger.error("=== SERVICE: Erro ao deletar do banco ===", e);
             throw new RuntimeException("Erro ao deletar item do banco: " + e.getMessage(), e);
         }
-        
+
         try {
-            // Recalcular custos da OS
+            // ⚙️ Garante que a OS será salva sem o item removido
             serviceOrder.calculateTotalCost();
             serviceOrderRepository.save(serviceOrder);
             logger.info("=== SERVICE: Custos da OS recalculados com sucesso ===");
@@ -150,7 +155,7 @@ public class ServiceOrderItemService {
             logger.error("=== SERVICE: Erro ao recalcular custos da OS ===", e);
             throw new RuntimeException("Erro ao recalcular custos da OS: " + e.getMessage(), e);
         }
-        
+
         logger.info("=== SERVICE: Deleção concluída com sucesso ===");
     }
 

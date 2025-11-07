@@ -91,9 +91,9 @@ class InventoryControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void shouldCreateInventoryItemWhenAdmin() throws Exception {
-        InventoryItemCreateDTO request = new InventoryItemCreateDTO(2L, "MAIN", 1, new BigDecimal("30.00"), new BigDecimal("55.00"));
+        InventoryItemCreateDTO request = new InventoryItemCreateDTO(2L, "MAIN", 10, new BigDecimal("30.00"), new BigDecimal("55.00"));
         InventoryItemResponseDTO response = new InventoryItemResponseDTO(1L, 2L, "Filtro", "FLT-001", "MAIN",
-                0, 0, 1, new BigDecimal("30.00"), new BigDecimal("55.00"), LocalDateTime.now(), LocalDateTime.now());
+                10, 0, 1, new BigDecimal("30.00"), new BigDecimal("55.00"), LocalDateTime.now(), LocalDateTime.now());
 
         when(inventoryService.createItem(any(InventoryItemCreateDTO.class))).thenReturn(response);
 
@@ -108,7 +108,7 @@ class InventoryControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void shouldForbidInventoryCreationForNonAdmin() throws Exception {
-        InventoryItemCreateDTO request = new InventoryItemCreateDTO(2L, "MAIN", 1, null, null);
+        InventoryItemCreateDTO request = new InventoryItemCreateDTO(2L, "MAIN", 5, null, null);
 
         mockMvc.perform(post("/inventory/items")
                         .contentType(MediaType.APPLICATION_JSON)

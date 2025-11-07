@@ -85,13 +85,29 @@ public class InventoryService {
         item.setLocation(dto.location());
         item.setQuantity(0);
         item.setReservedQuantity(0);
-        item.setMinimumQuantity(dto.minimumQuantity() != null ? dto.minimumQuantity() : 0);
+        item.setMinimumQuantity(0);
         item.setUnitCost(dto.unitCost());
         item.setSalePrice(dto.salePrice());
 
         InventoryItem saved = inventoryItemRepository.save(item);
         auditService.logEntityAction("CREATE", "INVENTORY_ITEM", saved.getId(),
                 "Item criado para peça " + part.getId());
+        
+        // Registra quantidade inicial se fornecida
+        if (dto.initialQuantity() != null && dto.initialQuantity() > 0) {
+            registerEntry(
+                    dto.partId(),
+                    dto.location(),
+                    dto.initialQuantity(),
+                    dto.unitCost(),
+                    dto.salePrice(),
+                    "INITIAL",
+                    "Quantidade inicial ao criar item de estoque"
+            );
+            saved = inventoryItemRepository.findById(saved.getId())
+                    .orElse(saved);
+        }
+        
         inventoryAlertService.onStockLevelChanged(saved);
         return InventoryItemResponseDTO.fromEntity(saved);
     }
@@ -394,6 +410,18 @@ public class InventoryService {
         if (!Boolean.TRUE.equals(item.getRequiresStock())) {
             throw new IllegalArgumentException("Item não requer controle de estoque");
         }
+        
+        // Se não tem inventoryItem mas tem peça, tenta buscar automaticamente
+        if ((item.getInventoryItem() == null || item.getInventoryItem().getId() == null) && item.getPart() != null) {
+            InventoryItem autoInventoryItem = inventoryItemRepository.findByPartId(item.getPart().getId()).stream()
+                    .findFirst()
+                    .orElse(null);
+            if (autoInventoryItem != null) {
+                item.setInventoryItem(autoInventoryItem);
+                serviceOrderItemRepository.save(item);
+            }
+        }
+        
         if (item.getInventoryItem() == null || item.getInventoryItem().getId() == null) {
             throw new IllegalArgumentException("Item não possui referência de estoque");
         }
@@ -494,9 +522,22 @@ public class InventoryService {
     private ServiceOrderItem findServiceOrderItem(Long id) {
         ServiceOrderItem item = serviceOrderItemRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Item da ordem de serviço não encontrado"));
+        
         if (!Boolean.TRUE.equals(item.getRequiresStock())) {
             throw new IllegalArgumentException("Item informado não requer controle de estoque");
         }
+        
+        // Se não tem inventoryItem mas tem peça, tenta buscar automaticamente
+        if ((item.getInventoryItem() == null || item.getInventoryItem().getId() == null) && item.getPart() != null) {
+            InventoryItem autoInventoryItem = inventoryItemRepository.findByPartId(item.getPart().getId()).stream()
+                    .findFirst()
+                    .orElse(null);
+            if (autoInventoryItem != null) {
+                item.setInventoryItem(autoInventoryItem);
+                serviceOrderItemRepository.save(item);
+            }
+        }
+        
         return item;
     }
 

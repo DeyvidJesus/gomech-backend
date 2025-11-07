@@ -10,7 +10,10 @@ public final class PartMapper {
     public static Part toEntity(PartCreateDTO dto) {
         Part part = new Part();
         part.setName(dto.name());
-        part.setSku(dto.sku());
+        // SKU será definido no serviço se não for fornecido
+        if (dto.sku() != null && !dto.sku().trim().isEmpty()) {
+            part.setSku(dto.sku());
+        }
         part.setManufacturer(dto.manufacturer());
         part.setDescription(dto.description());
         part.setUnitCost(dto.unitCost());

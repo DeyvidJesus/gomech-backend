@@ -45,4 +45,10 @@ public interface ServiceOrderItemRepository extends JpaRepository<ServiceOrderIt
     
     @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.productCode = :productCode AND soi.stockReserved = true")
     List<ServiceOrderItem> findReservedByProductCode(@Param("productCode") String productCode);
+    
+    @Query("SELECT COUNT(soi) FROM ServiceOrderItem soi WHERE soi.part.id = :partId")
+    long countByPartId(@Param("partId") Long partId);
+    
+    @Query("SELECT soi FROM ServiceOrderItem soi WHERE soi.part.id = :partId")
+    List<ServiceOrderItem> findByPartId(@Param("partId") Long partId);
 }

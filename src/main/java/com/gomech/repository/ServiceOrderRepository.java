@@ -36,6 +36,10 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     List<ServiceOrder> findByVehicleIdAndOrganizationId(Long vehicleId, Long organizationId);
     
     long countByOrganizationId(Long organizationId);
+    
+    long countByClientIdAndOrganizationId(Long clientId, Long organizationId);
+    
+    long countByVehicleIdAndOrganizationId(Long vehicleId, Long organizationId);
 
     @Query("SELECT so FROM ServiceOrder so WHERE so.estimatedCompletion < :date AND so.status NOT IN ('COMPLETED', 'CANCELLED', 'DELIVERED')")
     List<ServiceOrder> findOverdueOrders(@Param("date") LocalDateTime date);

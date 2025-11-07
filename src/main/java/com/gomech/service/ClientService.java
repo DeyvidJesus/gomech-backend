@@ -6,6 +6,7 @@ import com.gomech.dto.Clients.ClientUpdateDTO;
 import com.gomech.model.Client;
 import com.gomech.model.Organization;
 import com.gomech.repository.ClientRepository;
+import com.gomech.repository.ServiceOrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,9 @@ import java.time.ZoneId;
 public class ClientService {
     @Autowired
     private ClientRepository repository;
+    
+    @Autowired
+    private ServiceOrderRepository serviceOrderRepository;
 
     @Autowired
     private AuditService auditService;
@@ -90,11 +94,28 @@ public class ClientService {
         }
         
         Client client = repository.findByIdAndOrganizationId(id, organizationId)
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+        
+        // Verifica se o cliente possui ordens de serviço
+        long serviceOrderCount = serviceOrderRepository.countByClientIdAndOrganizationId(id, organizationId);
+        if (serviceOrderCount > 0) {
+            throw new IllegalStateException(
+                String.format("Não é possível excluir este cliente pois ele possui %d ordem(ns) de serviço associada(s). " +
+                              "Remova ou transfira as ordens de serviço antes de excluir o cliente.", serviceOrderCount)
+            );
+        }
+        
+        // Verifica se o cliente possui veículos
+        if (client.getVehicles() != null && !client.getVehicles().isEmpty()) {
+            throw new IllegalStateException(
+                String.format("Não é possível excluir este cliente pois ele possui %d veículo(s) cadastrado(s). " +
+                              "Remova os veículos antes de excluir o cliente.", client.getVehicles().size())
+            );
+        }
         
         repository.deleteById(id);
         auditService.logEntityAction("DELETE", "CLIENT", id,
-                "Cliente removido");
+                "Cliente removido: " + client.getName());
     }
 
     public Client update(Long id, ClientUpdateDTO updatedClient) {

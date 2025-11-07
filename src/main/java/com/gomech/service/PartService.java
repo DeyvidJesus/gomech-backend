@@ -12,6 +12,7 @@ import com.gomech.dto.ServiceOrder.ServiceOrderItemResponseDTO;
 import com.gomech.model.ServiceOrderItemType;
 import com.gomech.repository.InventoryItemRepository;
 import com.gomech.repository.PartRepository;
+import com.gomech.repository.ServiceOrderItemRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.poi.ss.usermodel.*;
@@ -44,22 +45,31 @@ public class PartService {
     private final InventoryService inventoryService;
     private final ServiceOrderItemService serviceOrderItemService;
     private final InventoryItemRepository inventoryItemRepository;
+    private final ServiceOrderItemRepository serviceOrderItemRepository;
     private final AuditService auditService;
 
     public PartService(PartRepository partRepository,
                        InventoryService inventoryService,
                        ServiceOrderItemService serviceOrderItemService,
                        InventoryItemRepository inventoryItemRepository,
+                       ServiceOrderItemRepository serviceOrderItemRepository,
                        AuditService auditService) {
         this.partRepository = partRepository;
         this.inventoryService = inventoryService;
         this.serviceOrderItemService = serviceOrderItemService;
         this.inventoryItemRepository = inventoryItemRepository;
+        this.serviceOrderItemRepository = serviceOrderItemRepository;
         this.auditService = auditService;
     }
 
     public PartResponseDTO register(PartCreateDTO dto) {
         Part part = PartMapper.toEntity(dto);
+        
+        // Gera SKU automaticamente se não foi fornecido
+        if (part.getSku() == null || part.getSku().trim().isEmpty()) {
+            part.setSku(generateUniqueSku(part.getName()));
+        }
+        
         Part saved = partRepository.save(part);
 
         registerInitialStockIfRequested(saved, dto);
@@ -97,6 +107,25 @@ public class PartService {
         if (!partRepository.existsById(id)) {
             throw new IllegalArgumentException("Peça não encontrada");
         }
+        
+        // Verifica se a peça está sendo usada em alguma ordem de serviço
+        long usageCount = serviceOrderItemRepository.countByPartId(id);
+        if (usageCount > 0) {
+            throw new IllegalStateException(
+                String.format("Não é possível excluir esta peça pois ela está sendo usada em %d ordem(ns) de serviço. " +
+                              "Remova ou substitua a peça nas ordens de serviço antes de excluí-la.", usageCount)
+            );
+        }
+        
+        // Verifica se a peça tem itens de estoque
+        List<InventoryItem> inventoryItems = inventoryItemRepository.findByPartId(id);
+        if (!inventoryItems.isEmpty()) {
+            throw new IllegalStateException(
+                "Não é possível excluir esta peça pois ela possui itens no estoque. " +
+                "Remova os itens do estoque antes de excluir a peça."
+            );
+        }
+        
         partRepository.deleteById(id);
         auditService.logEntityAction("DELETE", "PART", id,
                 "Peça removida");
@@ -171,6 +200,93 @@ public class PartService {
                 .orElse(null);
     }
 
+    /**
+     * Gera um SKU único baseado no nome da peça.
+     * Formato: PREFIX-XXXXX onde PREFIX são as primeiras letras do nome e XXXXX é um número sequencial.
+     */
+    private String generateUniqueSku(String partName) {
+        // Gera prefixo a partir do nome (primeiras letras de cada palavra, máximo 4 caracteres)
+        String prefix = generateSkuPrefix(partName);
+        
+        // Busca o último SKU com esse prefixo para incrementar
+        String basePattern = prefix + "-%";
+        List<Part> existingParts = partRepository.findAll().stream()
+                .filter(p -> p.getSku() != null && p.getSku().startsWith(prefix + "-"))
+                .toList();
+        
+        int maxNumber = 0;
+        for (Part p : existingParts) {
+            try {
+                String[] parts = p.getSku().split("-");
+                if (parts.length >= 2) {
+                    int num = Integer.parseInt(parts[parts.length - 1]);
+                    if (num > maxNumber) {
+                        maxNumber = num;
+                    }
+                }
+            } catch (NumberFormatException ignored) {
+                // Ignora SKUs que não seguem o padrão
+            }
+        }
+        
+        // Gera o novo SKU com número incrementado
+        int nextNumber = maxNumber + 1;
+        
+        // Verifica se já existe (por segurança) e incrementa se necessário
+        String newSku;
+        List<Part> allParts = partRepository.findAll();
+        do {
+            newSku = String.format("%s-%05d", prefix, nextNumber);
+            final String checkSku = newSku;
+            if (allParts.stream().noneMatch(p -> checkSku.equals(p.getSku()))) {
+                break;
+            }
+            nextNumber++;
+        } while (true);
+        
+        return newSku;
+    }
+
+    /**
+     * Gera o prefixo do SKU a partir do nome da peça.
+     * Extrai as primeiras letras de cada palavra (máximo 4 caracteres).
+     */
+    private String generateSkuPrefix(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "PART";
+        }
+        
+        // Remove caracteres especiais e divide em palavras
+        String cleanName = name.trim().toUpperCase()
+                .replaceAll("[^A-Z0-9\\s]", "")
+                .replaceAll("\\s+", " ");
+        
+        String[] words = cleanName.split(" ");
+        StringBuilder prefix = new StringBuilder();
+        
+        // Pega a primeira letra de cada palavra
+        for (String word : words) {
+            if (!word.isEmpty() && prefix.length() < 4) {
+                prefix.append(word.charAt(0));
+            }
+        }
+        
+        // Se o prefixo for muito curto, completa com as próximas letras da primeira palavra
+        if (prefix.length() < 3 && words.length > 0) {
+            String firstWord = words[0];
+            for (int i = 1; i < firstWord.length() && prefix.length() < 4; i++) {
+                prefix.append(firstWord.charAt(i));
+            }
+        }
+        
+        // Se ainda estiver vazio, usa valor padrão
+        if (prefix.length() == 0) {
+            return "PART";
+        }
+        
+        return prefix.toString();
+    }
+
     public List<PartResponseDTO> saveFromFile(MultipartFile file) {
         List<Part> parts;
         String filename = file.getOriginalFilename();
@@ -197,11 +313,21 @@ public class PartService {
             
             while ((line = reader.readLine()) != null) {
                 String[] fields = line.split(",");
-                if (fields.length < 2) continue; // Precisa de pelo menos name e sku
+                if (fields.length < 1) continue; // Precisa de pelo menos name
                 
                 Part part = new Part();
-                part.setName(fields[0].trim());
-                part.setSku(fields[1].trim());
+                String name = fields[0].trim();
+                if (name.isEmpty()) continue;
+                
+                part.setName(name);
+                
+                // SKU é opcional - será gerado se não fornecido
+                if (fields.length > 1 && !fields[1].trim().isEmpty()) {
+                    part.setSku(fields[1].trim());
+                } else {
+                    part.setSku(generateUniqueSku(name));
+                }
+                
                 if (fields.length > 2 && !fields[2].trim().isEmpty()) part.setManufacturer(fields[2].trim());
                 if (fields.length > 3 && !fields[3].trim().isEmpty()) part.setDescription(fields[3].trim());
                 if (fields.length > 4 && !fields[4].trim().isEmpty()) {
@@ -214,6 +340,10 @@ public class PartService {
                         part.setUnitPrice(new BigDecimal(fields[5].trim()));
                     } catch (NumberFormatException ignored) {}
                 }
+                
+                // Define como ativo por padrão
+                part.setActive(true);
+                
                 parts.add(part);
             }
         } catch (IOException e) {
@@ -267,11 +397,10 @@ public class PartService {
                     rowData.put(entry.getKey(), formatter.formatCellValue(cell));
                 }
                 
-                // Verificar campos obrigatórios
+                // Verificar campos obrigatórios - apenas name é obrigatório agora
                 String name = rowData.get("name");
-                String sku = rowData.get("sku");
                 
-                if ((name != null && !name.trim().isEmpty()) && (sku != null && !sku.trim().isEmpty())) {
+                if (name != null && !name.trim().isEmpty()) {
                     Part part = buildPartFromMap(rowData);
                     parts.add(part);
                 }
@@ -289,8 +418,16 @@ public class PartService {
     private Part buildPartFromMap(Map<String, String> data) {
         Part part = new Part();
         
-        part.setName(data.get("name"));
-        part.setSku(data.get("sku"));
+        String name = data.get("name");
+        part.setName(name);
+        
+        // SKU é opcional - será gerado se não fornecido
+        String sku = data.get("sku");
+        if (sku != null && !sku.trim().isEmpty()) {
+            part.setSku(sku.trim());
+        } else {
+            part.setSku(generateUniqueSku(name));
+        }
         
         String manufacturer = data.get("manufacturer");
         if (manufacturer != null && !manufacturer.isEmpty()) {
@@ -318,6 +455,9 @@ public class PartService {
             } catch (NumberFormatException ignored) {}
         }
         
+        // Define como ativo por padrão
+        part.setActive(true);
+        
         return part;
     }
 
@@ -332,7 +472,8 @@ public class PartService {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (CSVPrinter printer = new CSVPrinter(new PrintWriter(out),
                 CSVFormat.DEFAULT.withHeader("name", "sku", "manufacturer", "description", "unitCost", "unitPrice"))) {
-            printer.printRecord("Filtro de Óleo", "FO-001", "Bosch", "Filtro de óleo para motor", "25.00", "45.00");
+            printer.printRecord("Filtro de Óleo", "", "Bosch", "Filtro de óleo para motor", "25.00", "45.00");
+            printer.printRecord("Pastilha de Freio", "PF-001", "Fremax", "Pastilha de freio dianteira", "80.00", "150.00");
         } catch (IOException e) {
             throw new RuntimeException("Falha ao gerar template CSV", e);
         }
@@ -359,7 +500,7 @@ public class PartService {
             // Cabeçalho
             Row header = sheet.createRow(0);
             String[] headers = {"name", "sku", "manufacturer", "description", "unitCost", "unitPrice"};
-            String[] headersDesc = {"Nome*", "SKU*", "Fabricante", "Descrição", "Custo Unitário", "Preço de Venda"};
+            String[] headersDesc = {"Nome*", "SKU (auto)", "Fabricante", "Descrição", "Custo Unitário", "Preço de Venda"};
             
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
@@ -368,15 +509,28 @@ public class PartService {
                 sheet.setColumnWidth(i, 5000);
             }
             
-            // Linha de exemplo
-            Row example = sheet.createRow(1);
-            Object[] exampleData = {"Filtro de Óleo", "FO-001", "Bosch", "Filtro de óleo para motor", 25.00, 45.00};
-            for (int i = 0; i < exampleData.length; i++) {
-                Cell cell = example.createCell(i);
-                if (exampleData[i] instanceof Number) {
-                    cell.setCellValue(((Number) exampleData[i]).doubleValue());
+            // Linha de exemplo 1 - com SKU gerado automaticamente
+            Row example1 = sheet.createRow(1);
+            Object[] exampleData1 = {"Filtro de Óleo", "", "Bosch", "Filtro de óleo para motor", 25.00, 45.00};
+            for (int i = 0; i < exampleData1.length; i++) {
+                Cell cell = example1.createCell(i);
+                if (exampleData1[i] instanceof Number) {
+                    cell.setCellValue(((Number) exampleData1[i]).doubleValue());
                 } else {
-                    cell.setCellValue(String.valueOf(exampleData[i]));
+                    cell.setCellValue(String.valueOf(exampleData1[i]));
+                }
+                cell.setCellStyle(exampleStyle);
+            }
+            
+            // Linha de exemplo 2 - com SKU manual
+            Row example2 = sheet.createRow(2);
+            Object[] exampleData2 = {"Pastilha de Freio", "PF-001", "Fremax", "Pastilha de freio dianteira", 80.00, 150.00};
+            for (int i = 0; i < exampleData2.length; i++) {
+                Cell cell = example2.createCell(i);
+                if (exampleData2[i] instanceof Number) {
+                    cell.setCellValue(((Number) exampleData2[i]).doubleValue());
+                } else {
+                    cell.setCellValue(String.valueOf(exampleData2[i]));
                 }
                 cell.setCellStyle(exampleStyle);
             }
@@ -395,24 +549,32 @@ public class PartService {
             String[] instructions = {
                 "1. CAMPOS OBRIGATÓRIOS:",
                 "   • name: Nome da peça - OBRIGATÓRIO",
-                "   • sku: Código SKU único - OBRIGATÓRIO",
                 "",
-                "2. FORMATO DOS CAMPOS:",
-                "   • name: Texto livre (ex: Filtro de Óleo)",
-                "   • sku: Código único alfanumérico (ex: FO-001)",
+                "2. CAMPOS OPCIONAIS:",
+                "   • sku: Código SKU único - OPCIONAL (será gerado automaticamente se não fornecido)",
                 "   • manufacturer: Nome do fabricante",
                 "   • description: Descrição detalhada",
                 "   • unitCost: Valor de custo (ex: 25.00)",
                 "   • unitPrice: Preço de venda (ex: 45.00)",
                 "",
-                "3. DICAS IMPORTANTES:",
-                "   • Não altere os nomes das colunas",
-                "   • A linha amarela é um exemplo",
-                "   • SKU deve ser único no sistema",
+                "3. GERAÇÃO AUTOMÁTICA DE SKU:",
+                "   • Se você deixar o campo SKU vazio, o sistema gerará automaticamente",
+                "   • O SKU gerado usa as iniciais do nome + número sequencial",
+                "   • Exemplo: 'Filtro de Óleo' → 'FDO-00001'",
+                "   • Você também pode fornecer seu próprio SKU único",
+                "",
+                "4. FORMATO DOS CAMPOS:",
+                "   • name: Texto livre (ex: Filtro de Óleo)",
+                "   • sku: Código único alfanumérico (ex: FO-001) ou vazio para auto-gerar",
                 "   • Use ponto para decimais (25.50)",
+                "",
+                "5. DICAS IMPORTANTES:",
+                "   • Não altere os nomes das colunas",
+                "   • As linhas amarelas são exemplos",
+                "   • Se fornecer SKU, ele deve ser único no sistema",
                 "   • Linhas vazias serão ignoradas",
                 "",
-                "4. APÓS PREENCHER:",
+                "6. APÓS PREENCHER:",
                 "   • Salve o arquivo",
                 "   • Vá para a tela de Peças",
                 "   • Clique em 'Importar'",
