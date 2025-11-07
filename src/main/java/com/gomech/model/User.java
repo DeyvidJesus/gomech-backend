@@ -76,8 +76,23 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if(this.role == Role.ADMIN) return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
-        else return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return this.role != null ? this.role.getAuthorities() : List.of();
+    }
+    
+    /**
+     * Verifica se o usuário é administrador
+     */
+    public boolean isAdmin() {
+        return this.role != null && this.role.isAdmin();
+    }
+    
+    /**
+     * Verifica se o usuário pertence à mesma organização
+     */
+    public boolean isSameOrganization(User other) {
+        return this.organization != null && 
+               other.getOrganization() != null && 
+               this.organization.getId().equals(other.getOrganization().getId());
     }
 
     @Override

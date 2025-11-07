@@ -16,8 +16,9 @@ public class PythonAiService {
     private final WebClient webClient;
     private final String pythonServiceUrl;
 
-    public PythonAiService(WebClient.Builder webClientBuilder) {
-        this.pythonServiceUrl = "http://localhost:5000";
+    public PythonAiService(WebClient.Builder webClientBuilder,
+                           @org.springframework.beans.factory.annotation.Value("${ai.service.url:http://localhost:5000}") String aiServiceUrl) {
+        this.pythonServiceUrl = aiServiceUrl;
         this.webClient = webClientBuilder
                 .baseUrl(pythonServiceUrl)
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024))

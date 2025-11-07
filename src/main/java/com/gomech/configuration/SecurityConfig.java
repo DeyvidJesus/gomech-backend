@@ -34,22 +34,27 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
                     corsConfig.setAllowedOrigins(List.of(
-                            "http://localhost:3000",
-                            "https://app.go-mech.com"
+                            "http://localhost:3000",           // Frontend dev
+                            "https://app.go-mech.com",          // Produção frontend
+                            "https://api.go-mech.com"           // Produção API (via Nginx)
                     ));
-                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+                    corsConfig.setAllowedHeaders(List.of("*"));
+                    corsConfig.setExposedHeaders(List.of("Authorization", "Content-Type", "X-Total-Count"));
                     corsConfig.setAllowCredentials(true);
                     corsConfig.setMaxAge(3600L);
                     return corsConfig;
                 }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh", "/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh", "/auth/register", "/auth/register-organization").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/parts/**", "/inventory/items", "/inventory/movements/**", "/inventory/reports/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/parts/**", "/inventory/items/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/parts/**", "/inventory/items/**").hasRole("ADMIN")
+                        .requestMatchers("/users/me/tutorials", "/users/me/tutorials/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

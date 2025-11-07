@@ -6,6 +6,8 @@ import com.gomech.dto.Authentication.LoginResponseDTO;
 import com.gomech.dto.Authentication.RefreshTokenRequest;
 import com.gomech.dto.Authentication.RegisterDTO;
 import com.gomech.dto.Authentication.RegisterResponseDTO;
+import com.gomech.dto.Authentication.RegisterOrganizationDTO;
+import com.gomech.dto.Authentication.RegisterOrganizationResponseDTO;
 import com.gomech.dto.Authentication.TokenPairDTO;
 import com.gomech.dto.Organization.OrganizationBasicInfoDTO;
 import com.gomech.model.Organization;
@@ -112,6 +114,83 @@ public class AuthController {
         this.repository.save(newUser);
 
         return ResponseEntity.ok(new RegisterResponseDTO(newUser.getId(), data.mfaEnabled(), mfaSecret));
+    }
+
+    @PostMapping("/register-organization")
+    @Transactional
+    public ResponseEntity<?> registerOrganization(@RequestBody @Valid RegisterOrganizationDTO data) {
+        // Check if admin email already exists
+        if (this.repository.findByEmail(data.adminEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Email already exists");
+        }
+
+        // Check if organization name already exists
+        if (this.organizationRepository.existsByName(data.organizationName())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Organization name already exists");
+        }
+
+        // Generate slug if not provided
+        String slug = data.organizationSlug();
+        if (slug == null || slug.isEmpty()) {
+            slug = generateSlug(data.organizationName());
+        }
+
+        // Check if slug already exists
+        if (this.organizationRepository.existsBySlug(slug)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Organization slug already exists. Please choose a different name or slug.");
+        }
+
+        // Create organization
+        Organization organization = new Organization(
+                data.organizationName(),
+                slug,
+                data.organizationDescription(),
+                data.organizationEmail(),
+                data.organizationPhone(),
+                data.organizationAddress(),
+                data.organizationDocument()
+        );
+        Organization savedOrganization = organizationRepository.save(organization);
+
+        // Create admin user
+        String encryptedPassword = new BCryptPasswordEncoder().encode(data.adminPassword());
+        User adminUser = new User(
+                data.adminName(),
+                data.adminEmail(),
+                encryptedPassword,
+                com.gomech.model.Role.ADMIN,
+                savedOrganization
+        );
+
+        String mfaSecret = null;
+        if (data.mfaEnabled()) {
+            String secret = mfaService.generateSecret();
+            adminUser.enableMfa(mfaService.encryptSecret(secret));
+            mfaSecret = secret;
+        }
+
+        User savedUser = repository.save(adminUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterOrganizationResponseDTO(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                savedUser.getName(),
+                OrganizationBasicInfoDTO.fromEntity(savedOrganization),
+                data.mfaEnabled(),
+                mfaSecret,
+                "Organization and admin user created successfully"
+        ));
+    }
+
+    private String generateSlug(String name) {
+        return name.toLowerCase()
+                .replaceAll("[^a-z0-9\\s-]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("-+", "-")
+                .replaceAll("^-|-$", "");
     }
 
     @PostMapping("/refresh")

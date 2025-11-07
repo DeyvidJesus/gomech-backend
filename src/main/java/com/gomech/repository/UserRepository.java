@@ -1,6 +1,9 @@
 package com.gomech.repository;
 
+import com.gomech.model.Organization;
 import com.gomech.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,4 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @EntityGraph(attributePaths = "organization")
     Optional<User> findWithOrganizationByEmail(String email);
+    
+    Page<User> findByOrganization(Organization organization, Pageable pageable);
 }
