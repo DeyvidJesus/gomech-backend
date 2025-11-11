@@ -149,4 +149,8 @@ public class ServiceOrder {
         this.inventoryMovements.remove(movement);
         movement.setServiceOrder(null);
     }
+
+    public String getServiceType() {
+        return "GENERAL";
+    }
 }

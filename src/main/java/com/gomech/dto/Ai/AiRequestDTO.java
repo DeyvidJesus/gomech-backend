@@ -21,10 +21,21 @@ public class AiRequestDTO {
     @JsonProperty("userId")
     private Long userId;
 
+    @JsonProperty("context")
+    private String context;
+
     public AiRequestDTO(String question, Boolean chart, String threadId, Long userId) {
         this.question = question;
         this.chart = chart != null ? chart : false;
         this.threadId = threadId;
         this.userId = userId;
+    }
+
+    public AiRequestDTO(String question, Boolean chart, String threadId, Long userId, String context) {
+        this.question = question;
+        this.chart = chart != null ? chart : false;
+        this.threadId = threadId;
+        this.userId = userId;
+        this.context = context;
     }
 }

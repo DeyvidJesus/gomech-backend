@@ -49,7 +49,8 @@ public class ChatController {
                     request.getPrompt(),
                     false,
                     existingThreadId,
-                    request.getUserId()
+                    request.getUserId(),
+                    request.getContext()
             );
 
             AiResponseDTO aiResponse = pythonAiService.askQuestion(aiRequest);
@@ -86,6 +87,20 @@ public class ChatController {
                         public final boolean serviceAvailable = false;
                         public final String backendStatus = "error";
                         public final String message = "Erro ao obter status: " + e.getMessage();
+                    });
+        }
+    }
+
+    @GetMapping("/insights")
+    public ResponseEntity<Object> getInsights() {
+        try {
+            Object insights = pythonAiService.getInsights();
+            return ResponseEntity.ok(insights);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Object() {
+                        public final String error = "Erro ao obter insights";
+                        public final String message = e.getMessage();
                     });
         }
     }

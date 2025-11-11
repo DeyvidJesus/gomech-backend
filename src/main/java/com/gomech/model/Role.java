@@ -9,7 +9,8 @@ import java.util.List;
 
 public enum Role {
     ADMIN("ADMIN"),
-    USER("USER");
+    USER("USER"),
+    TECHNICIAN("TECHNICIAN");
 
     private final String role;
 
@@ -52,5 +53,9 @@ public enum Role {
      */
     public boolean isUser() {
         return this == USER;
+    }
+
+    public boolean isTechnician() {
+        return this == TECHNICIAN;
     }
 }

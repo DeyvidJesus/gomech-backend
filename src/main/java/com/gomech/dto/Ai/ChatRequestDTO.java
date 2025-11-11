@@ -18,4 +18,7 @@ public class ChatRequestDTO {
 
     @JsonProperty("userId")
     private Long userId;
+
+    @JsonProperty("context")
+    private String context;
 }

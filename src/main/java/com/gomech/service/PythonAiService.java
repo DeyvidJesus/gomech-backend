@@ -36,7 +36,8 @@ public class PythonAiService {
             PythonChatRequest pythonRequest = new PythonChatRequest(
                 request.getQuestion(),
                     request.getThreadId(),
-                    request.getUserId()
+                    request.getUserId(),
+                    request.getContext()
             );
             
             PythonChatResponse pythonResponse = webClient.post()
@@ -182,15 +183,97 @@ public class PythonAiService {
         }
     }
 
+    /**
+     * Obtém insights operacionais e recomendações do Python AI Service
+     * @return Objeto com estatísticas, análises e previsões
+     */
+    public Object getInsights() {
+        try {
+            return webClient.get()
+                    .uri("/insights")
+                    .retrieve()
+                    .bodyToMono(Object.class)
+                    .timeout(Duration.ofSeconds(30))
+                    .block();
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao obter insights: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Transcreve áudio para texto usando OpenAI Whisper ou Google Speech-to-Text
+     * @param request Mapa com audio_base64, engine e language
+     * @return Resposta com texto transcrito
+     */
+    public java.util.Map<String, Object> transcribeAudio(java.util.Map<String, Object> request) {
+        try {
+            return webClient.post()
+                    .uri("/voice/transcribe")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {})
+                    .timeout(Duration.ofMinutes(3))
+                    .block();
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao transcrever áudio: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Converte texto em áudio usando OpenAI Text-to-Speech
+     * @param request Mapa com text e voice
+     * @return Resposta com audio_base64
+     */
+    public java.util.Map<String, Object> synthesizeSpeech(java.util.Map<String, Object> request) {
+        try {
+            return webClient.post()
+                    .uri("/voice/synthesize")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {})
+                    .timeout(Duration.ofMinutes(2))
+                    .block();
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao sintetizar fala: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Processa comando de voz completo (STT + processamento + TTS opcional)
+     * @param request Mapa com audio_base64 e tts_enabled
+     * @return Resposta completa com transcrição, resposta e áudio opcional
+     */
+    public java.util.Map<String, Object> processVoiceCommand(java.util.Map<String, Object> request) {
+        try {
+            return webClient.post()
+                    .uri("/voice/command")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {})
+                    .timeout(Duration.ofMinutes(3))
+                    .block();
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao processar comando de voz: " + e.getMessage(), e);
+        }
+    }
+
     private static class PythonChatRequest {
         public String message;
         public String thread_id;
         public Long user_id;
+        public String context;
 
         public PythonChatRequest(String message, String threadId, Long userId) {
             this.message = message;
             this.thread_id = threadId;
             this.user_id = userId;
+        }
+
+        public PythonChatRequest(String message, String threadId, Long userId, String context) {
+            this.message = message;
+            this.thread_id = threadId;
+            this.user_id = userId;
+            this.context = context;
         }
     }
 
